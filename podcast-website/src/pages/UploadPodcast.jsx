@@ -27,8 +27,8 @@ function UploadPodcast() {
 
   const categories = [
     { id: "red-mic", name: "Red Mic", icon: "🎤", color: "red" },
-    { id: "qalander-nama", name: "Qalander Nama", icon: "🎵", color: "purple" },
-    { id: "special", name: "Special Podcast", icon: "⭐", color: "blue" }
+    { id: "pakhtun-chronicles", name: "Pukhtun Chronicles", icon: "🎵", color: "purple" },
+    { id: "رشتیا-رشتیا-وی", name: "رشتیا رشتیا وی", icon: "⭐", color: "blue" }
   ];
 
   // SVG Icons

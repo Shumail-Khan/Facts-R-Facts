@@ -26,8 +26,8 @@ function Home() {
   // Category icons mapping with red theme
   const categoryIcons = {
     "Red Mic": <MicrophoneIcon className="w-8 h-8 text-red-600" />,
-    "QalanderNamaa": <MusicNoteIcon className="w-8 h-8 text-red-500" />,
-    "Tarikh Da Takr": <SparklesIcon className="w-8 h-8 text-red-400" />
+    "Pukhtun Chronicles": <MusicNoteIcon className="w-8 h-8 text-red-500" />,
+    "رشتیا رشتیا وی": <SparklesIcon className="w-8 h-8 text-red-400" />
   };
 
   // Dummy videos data for each category
@@ -86,7 +86,7 @@ function Home() {
         category: "Red Mic"
       }
     ],
-    "Qalander": [
+    "Pukhtun Chronicles": [
       {
         id: 5,
         title: "Sufi Poetry Night",
@@ -98,7 +98,7 @@ function Home() {
         likes: 1876,
         comments: 145,
         videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-        category: "Qalander"
+        category: "Pukhtun Chronicles"
       },
       {
         id: 6,
@@ -111,7 +111,7 @@ function Home() {
         likes: 2156,
         comments: 178,
         videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-        category: "Qalander"
+        category: "Pukhtun Chronicles"
       },
       {
         id: 7,
@@ -124,7 +124,7 @@ function Home() {
         likes: 3245,
         comments: 267,
         videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-        category: "Qalander"
+        category: "Pukhtun Chronicles"
       },
       {
         id: 8,
@@ -137,10 +137,10 @@ function Home() {
         likes: 1432,
         comments: 89,
         videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-        category: "Qalander"
+        category: "Pukhtun Chronicles"
       }
     ],
-    "Naama": [
+    "رشتیا رشتیا وی": [
       {
         id: 9,
         title: "Travel Diaries: Mountains",
@@ -152,7 +152,7 @@ function Home() {
         likes: 2678,
         comments: 198,
         videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-        category: "Naama"
+        category: "رشتیا رشتیا وی"
       },
       {
         id: 10,
@@ -165,7 +165,7 @@ function Home() {
         likes: 3890,
         comments: 312,
         videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-        category: "Naama"
+        category: "رشتیا رشتیا وی"
       },
       {
         id: 11,
@@ -178,7 +178,7 @@ function Home() {
         likes: 1987,
         comments: 156,
         videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-        category: "Naama"
+        category: "رشتیا رشتیا وی"
       },
       {
         id: 12,
@@ -191,7 +191,7 @@ function Home() {
         likes: 1654,
         comments: 123,
         videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-        category: "Naama"
+        category: "رشتیا رشتیا وی"
       }
     ]
   };
@@ -211,19 +211,19 @@ function Home() {
         },
         {
           _id: "2",
-          name: "QalanderNamaa",
+          name: "Pukhtun Chronicles",
           description: "Spiritual wisdom, poetry, and soulful music",
-          episodeCount: dummyVideos["Qalander"].length,
-          videos: dummyVideos["Qalander"],
-          icon: categoryIcons["QalanderNamaa"]
+          episodeCount: dummyVideos["Pukhtun Chronicles"].length,
+          videos: dummyVideos["Pukhtun Chronicles"],
+          icon: categoryIcons["Pukhtun Chronicles"]
         },
         {
           _id: "3",
-          name: "Tarikh Da Takr",
+          name: "رشتیا رشتیا وی",
           description: "Travel adventures and cultural explorations",
-          episodeCount: dummyVideos["Naama"].length,
-          videos: dummyVideos["Naama"],
-          icon: categoryIcons["Tarikh Da Takr"]
+          episodeCount: dummyVideos["رشتیا رشتیا وی"].length,
+          videos: dummyVideos["رشتیا رشتیا وی"],
+          icon: categoryIcons["رشتیا رشتیا وی"]
         }
       ];
 
@@ -232,8 +232,8 @@ function Home() {
       // Set featured videos (mix from all categories)
       const allVideos = [
         ...dummyVideos["Red Mic"],
-        ...dummyVideos["Qalander"],
-        ...dummyVideos["Naama"]
+        ...dummyVideos["Pukhtun Chronicles"],
+        ...dummyVideos["رشتیا رشتیا وی"]
       ];
       setFeaturedVideos(allVideos.slice(0, 6));
 

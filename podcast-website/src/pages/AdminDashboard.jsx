@@ -30,7 +30,7 @@ function AdminDashboard() {
     {
       id: 1,
       title: "Sufi Poetry Night: Rumi's Wisdom",
-      category: "Qalander Nama",
+      category: "Pukhtun Chronicles",
       views: 12500,
       likes: 2345,
       date: "2024-03-15",
@@ -48,7 +48,7 @@ function AdminDashboard() {
     {
       id: 3,
       title: "Travel Diaries: Mountains",
-      category: "Special Podcast",
+      category: "رشتیا رشتیا وی",
       views: 7200,
       likes: 1234,
       date: "2024-03-13",
@@ -57,7 +57,7 @@ function AdminDashboard() {
     {
       id: 4,
       title: "Qawwali Night Live",
-      category: "Qalander Nama",
+      category: "Pukhtun Chronicles",
       views: 15600,
       likes: 3245,
       date: "2024-03-12",
@@ -67,8 +67,8 @@ function AdminDashboard() {
 
   const [categoryStats, setCategoryStats] = useState([
     { name: "Red Mic", videos: 45, views: 15200, color: "#ef4444" },
-    { name: "Qalander Nama", videos: 62, views: 20100, color: "#8b5cf6" },
-    { name: "Special Podcast", videos: 49, views: 9980, color: "#3b82f6" }
+    { name: "Pukhtun Chronicles", videos: 62, views: 20100, color: "#8b5cf6" },
+    { name: "رشتیا رشتیا وی", videos: 49, views: 9980, color: "#3b82f6" }
   ]);
 
   const [viewsData, setViewsData] = useState([

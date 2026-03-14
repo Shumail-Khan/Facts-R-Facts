@@ -9,7 +9,8 @@ function Navbar() {
   const menuItems = [
     { name: "Home", path: "/" },
     { name: "Red Mic", path: "/category/red-mic" },
-    { name: "QalanderNamaa", path: "/category/qalanderNama" },
+    { name: "Pukhtun Chronicles", path: "/category/pukhtun-chronicles" },
+    { name: "رشتیا رشتیا وی", path: "/category/رشتیا-رشتیا-وی" },
   ];
 
   return (

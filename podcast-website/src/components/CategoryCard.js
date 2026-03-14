@@ -6,9 +6,8 @@ function CategoryCard({ category }) {
   // Background logos/images for each category (you can replace these URLs with your own)
   const categoryBackgrounds = {
     "Red Mic": "WhatsApp Image 2026-03-13 at 2.22.11 PM (1).jpeg", // Microphone studio
-    "QalanderNamaa": "WhatsApp Image 2026-03-13 at 2.22.10 PM.jpeg", // Sufi music
-    "QalanderNamaa": "WhatsApp Image 2026-03-13 at 2.22.10 PM.jpeg", // Sufi music
-    "Tarikh Da Takr": "WhatsApp Image 2026-03-13 at 2.22.11 PM.jpeg", // Mountains/travel
+    "Pukhtun Chronicles": "WhatsApp Image 2026-03-13 at 2.22.10 PM.jpeg", // Sufi music
+    "رشتیا رشتیا وی": "WhatsApp Image 2026-03-13 at 2.22.11 PM.jpeg", // Mountains/travel
     "Naama": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format", // Mountains/travel
     "default": "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=800&auto=format" // Default podcast
   };

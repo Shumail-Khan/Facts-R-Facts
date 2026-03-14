@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import API from "../services/api";
-import VideoCard from "../components/VideoCard";
+// import VideoCard from "../components/VideoCard";
 import Navbar from "../components/Navbar";
 import {
   MusicNoteIcon,
