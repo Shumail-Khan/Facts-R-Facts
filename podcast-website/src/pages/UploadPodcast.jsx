@@ -35,9 +35,9 @@ function UploadPodcast() {
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
 
   const categories = [
-    { id: "Red Mic", name: "Red Mic", icon: "🎤", color: "from-red-500 to-red-600" },
-    { id: "Qalander", name: "Qalander", icon: "🎵", color: "from-purple-500 to-purple-600" },
-    { id: "Naama", name: "Naama", icon: "⭐", color: "from-blue-500 to-blue-600" },
+    { id: "red-mic", name: "Red Mic", icon: "🎤", color: "red" },
+    { id: "pakhtun-chronicles", name: "Pukhtun Chronicles", icon: "🎵", color: "purple" },
+    { id: "رشتیا-رشتیا-وی", name: "رشتیا رشتیا وی", icon: "⭐", color: "blue" }
   ];
 
   // Handle video playback
@@ -65,13 +65,13 @@ function UploadPodcast() {
     if (videoRef.current) {
       const videoDuration = videoRef.current.duration;
       setDuration(videoDuration);
-      
+
       // Format duration for form
       const minutes = Math.floor(videoDuration / 60);
       const seconds = Math.floor(videoDuration % 60);
       const formattedDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
       setFormData((prev) => ({ ...prev, duration: formattedDuration }));
-      
+
       setIsVideoLoaded(true);
       setVideoError(false);
     }
@@ -143,16 +143,16 @@ function UploadPodcast() {
       setSelectedVideo(file);
       setVideoError(false);
       setIsVideoLoaded(false);
-      
+
       // Clean up previous preview URL
       if (videoPreviewUrl) {
         URL.revokeObjectURL(videoPreviewUrl);
       }
-      
+
       // Create video preview URL
       const url = URL.createObjectURL(file);
       setVideoPreviewUrl(url);
-      
+
       // Reset playback state
       setIsPlaying(false);
       setCurrentTime(0);
@@ -251,7 +251,7 @@ function UploadPodcast() {
               (progressEvent.loaded * 100) / progressEvent.total
             );
             setUploadProgress(percent);
-            
+
             // Show complete message when 100%
             if (percent === 100) {
               setUploadComplete(true);
@@ -317,7 +317,7 @@ function UploadPodcast() {
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-8 -mt-8"></div>
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-8 -mb-8"></div>
-              
+
               <div className="flex items-center relative z-10">
                 <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mr-4">
                   <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -327,7 +327,7 @@ function UploadPodcast() {
                 <div className="flex-1">
                   <h3 className="text-2xl font-bold text-white mb-1">Video Uploaded Successfully! 🎉</h3>
                   <p className="text-green-100">Your video has been uploaded and is being processed</p>
-                  
+
                   {/* Progress bar for visual effect */}
                   <div className="w-full bg-white/20 rounded-full h-2 mt-3">
                     <motion.div
@@ -473,11 +473,10 @@ function UploadPodcast() {
                   {categories.map((cat) => (
                     <label
                       key={cat.id}
-                      className={`relative flex items-center justify-center px-4 py-3 rounded-lg border-2 cursor-pointer transition-all ${
-                        formData.category === cat.id
+                      className={`relative flex items-center justify-center px-4 py-3 rounded-lg border-2 cursor-pointer transition-all ${formData.category === cat.id
                           ? `border-${cat.color.split('-')[1]}-500 bg-${cat.color.split('-')[1]}-500/10`
                           : 'border-gray-600 hover:border-gray-500'
-                      }`}
+                        }`}
                     >
                       <input
                         type="radio"
@@ -591,9 +590,9 @@ function UploadPodcast() {
               <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700 overflow-hidden">
                 {/* Video Player with Custom Controls */}
                 <div className="relative aspect-video bg-black group"
-                     onMouseEnter={() => setShowControls(true)}
-                     onMouseLeave={() => setShowControls(false)}>
-                  
+                  onMouseEnter={() => setShowControls(true)}
+                  onMouseLeave={() => setShowControls(false)}>
+
                   {/* Video Element with proper sources */}
                   <video
                     ref={videoRef}
@@ -612,7 +611,7 @@ function UploadPodcast() {
                     )}
                     Your browser does not support the video tag.
                   </video>
-                  
+
                   {/* Video Info Overlay */}
                   <div className="absolute top-4 left-4 flex items-center space-x-2">
                     <span className="px-3 py-1 bg-red-500/90 backdrop-blur-sm text-white text-xs font-medium rounded-full">

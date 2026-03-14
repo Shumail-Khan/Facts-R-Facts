@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import API from "../services/api";
-import VideoCard from "../components/VideoCard";
+// import VideoCard from "../components/VideoCard";
 import Navbar from "../components/Navbar";
 import {
   MusicNoteIcon,
@@ -45,8 +45,8 @@ function CategoryVideos() {
         totalListeners: "12.5K"
       }
     },
-    "qalanderNama": {
-      name: "QalanderNaama",
+    "pukhtun-chronicles": {
+      name: "Pukhtun Chronicles",
       icon: <MusicNoteIcon className="w-8 h-8 text-red-500" />,
       color: "from-red-700 to-red-700",
       description: "Spiritual wisdom, poetry, and soulful music",
@@ -57,10 +57,10 @@ function CategoryVideos() {
         totalListeners: "9.2K"
       }
     },
-    "tarikh-da-takr": {
-      name: "Tarikh Da Takr",
-      icon: <MusicNoteIcon className="w-8 h-8 text-blue-500" />,
-      color: "from-blue-500 to-cyan-500",
+    "رشتیا-رشتیا-وی": {
+      name: "رشتیا رشتیا وی",
+      icon: <MusicNoteIcon className="w-8 h-8 text-red-500" />,
+      color: "from-red-700 to-red-700",
       description: "Travel adventures and cultural explorations",
       bgGradient: "from-blue-900/30 to-cyan-900/30",
       stats: {
@@ -71,8 +71,8 @@ function CategoryVideos() {
     }
   };
 
-  // Dummy videos data for Qalander category
-  const dummyQalanderVideos = [
+  // Dummy videos data for Pukhtun Chronicles category
+  const dummyPukhtunChroniclesVideos = [
     {
       _id: "1",
       title: "Sufi Poetry Night: Rumi's Eternal Wisdom",
@@ -83,7 +83,7 @@ function CategoryVideos() {
       views: 12500,
       likes: 2345,
       comments: 189,
-      category: "Qalander",
+      category: "Pukhtun Chronicles",
       videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
       poet: "Rumi",
       language: "Persian/Urdu",
@@ -99,7 +99,7 @@ function CategoryVideos() {
       views: 11200,
       likes: 2156,
       comments: 178,
-      category: "Qalander",
+      category: "Pukhtun Chronicles",
       videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
       poet: "Bulleh Shah",
       language: "Punjabi",
@@ -115,7 +115,7 @@ function CategoryVideos() {
       views: 18300,
       likes: 3245,
       comments: 267,
-      category: "Qalander",
+      category: "Pukhtun Chronicles",
       videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
       poet: "Various",
       language: "Urdu",
@@ -131,7 +131,7 @@ function CategoryVideos() {
       views: 7400,
       likes: 1432,
       comments: 89,
-      category: "Qalander",
+      category: "Pukhtun Chronicles",
       videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
       poet: "N/A",
       language: "Instrumental"
@@ -146,7 +146,7 @@ function CategoryVideos() {
       views: 8900,
       likes: 1678,
       comments: 134,
-      category: "Qalander",
+      category: "Pukhtun Chronicles",
       videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
       poet: "Amir Khusro",
       language: "Persian/Hindi"
@@ -161,7 +161,7 @@ function CategoryVideos() {
       views: 15600,
       likes: 2890,
       comments: 215,
-      category: "Qalander",
+      category: "Pukhtun Chronicles",
       videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
       poet: "Rumi",
       language: "Turkish"
@@ -176,7 +176,7 @@ function CategoryVideos() {
       views: 6800,
       likes: 1234,
       comments: 76,
-      category: "Qalander",
+      category: "Pukhtun Chronicles",
       videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
       poet: "Hafez",
       language: "Persian"
@@ -191,7 +191,7 @@ function CategoryVideos() {
       views: 9200,
       likes: 1876,
       comments: 145,
-      category: "Qalander",
+      category: "Pukhtun Chronicles",
       videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
       poet: "Various",
       language: "Multiple"
@@ -211,10 +211,10 @@ function CategoryVideos() {
     setLoading(true);
     // Simulate API call
     setTimeout(() => {
-      // For Qalander category, use dummy data
-      if (slug === "qalanderNama") {
-        setVideos(dummyQalanderVideos);
-        setFilteredVideos(dummyQalanderVideos);
+      // For Pukhtun Chronicles category, use dummy data
+      if (slug === "pukhtun-chronicles") {
+        setVideos(dummyPukhtunChroniclesVideos);
+        setFilteredVideos(dummyPukhtunChroniclesVideos);
       } else {
         // For other categories, you can add more dummy data or fetch from API
         API.get(`/videos/${slug}`)

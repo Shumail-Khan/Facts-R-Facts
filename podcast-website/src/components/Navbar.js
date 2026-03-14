@@ -9,7 +9,8 @@ function Navbar() {
   const menuItems = [
     { name: "Home", path: "/" },
     { name: "Red Mic", path: "/category/red-mic" },
-    { name: "QalanderNamaa", path: "/category/qalanderNama" },
+    { name: "Pukhtun Chronicles", path: "/category/pukhtun-chronicles" },
+    { name: "رشتیا رشتیا وی", path: "/category/رشتیا-رشتیا-وی" },
   ];
 
   return (
@@ -28,7 +29,7 @@ function Navbar() {
           >
             <Link to="/" className="flex items-center space-x-2">
               <span className="text-2xl">🎙️</span>
-              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
+              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stone-300 to-red-600">
                 FACTS ARE FACTS
               </span>
             </Link>
