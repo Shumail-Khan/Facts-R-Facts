@@ -1,0 +1,15 @@
+# i want to add node modules and other files that should not be tracked by git to the .gitignore file. please suggest the code to add to the .gitignore file.
+
+# .gitignore
+# Ignore node_modules
+node_modules/
+# Ignore environment variable files
+.env
+# Ignore log files
+logs/
+*.log
+# Ignore build output
+build/
+dist/
+# Ignore coverage reports
+coverage/
