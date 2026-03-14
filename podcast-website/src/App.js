@@ -6,6 +6,7 @@ import CategoryVideos from "./pages/CategoryVideos";
 import VideoPlayer from "./pages/VideoPlayer";
 import AdminDashboard from "./pages/AdminDashboard";
 import UploadPodcast from "./pages/UploadPodcast";
+import AdminLogin from "./pages/AdminLogin";
 
 function App(){
 
@@ -18,7 +19,7 @@ return(
 <Route path="/" element={<Home/>}/>
 <Route path="/category/:slug" element={<CategoryVideos/>}/>
 <Route path="/video/:id" element={<VideoPlayer/>}/>
-
+<Route path="/admin/login" element={<AdminLogin />} /> {/* NEW LOGIN ROUTE */}
 <Route path="/admin" element={<AdminDashboard/>}/>
 <Route path="/admin/upload" element={<UploadPodcast/>}/>
 
