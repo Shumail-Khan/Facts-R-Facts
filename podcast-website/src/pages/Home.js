@@ -65,7 +65,7 @@ function Home() {
       ]);
 
       // console.log('Videos Response:', videosResponse.data);
-      // console.log('Categories Response:', categoriesResponse.data);
+      console.log('Categories Response:', categoriesResponse.data);
 
       const videos = Array.isArray(videosResponse.data) ? videosResponse.data :
         (videosResponse.data.videos || []);

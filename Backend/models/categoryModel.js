@@ -9,12 +9,25 @@ const categorySchema = new mongoose.Schema(
     trim: true
   },
 
+  slug: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true
+  },
+
   description: {
     type: String,
     default: ""
   },
 
   icon: {
+    type: String,
+    default: ""
+  },
+
+  image: {
     type: String,
     default: ""
   }
