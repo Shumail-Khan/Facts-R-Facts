@@ -65,7 +65,7 @@ function Home() {
       ]);
 
       // console.log('Videos Response:', videosResponse.data);
-      console.log('Categories Response:', categoriesResponse.data);
+      // console.log('Categories Response:', categoriesResponse.data);
 
       const videos = Array.isArray(videosResponse.data) ? videosResponse.data :
         (videosResponse.data.videos || []);
@@ -74,7 +74,7 @@ function Home() {
         (categoriesResponse.data.categories || []);
 
       // Format videos
-      console.log(videos);
+      // console.log(videos);
       const formattedVideos = videos.map(video => ({
         id: video._id,
         title: video.title || "Untitled",
@@ -105,10 +105,10 @@ function Home() {
           v => v.categoryId === cat._id || v.category === cat.name
         );
 
-        console.log("THis is cat variable", cat);
         return {
           _id: cat._id,
           name: cat.name,
+          slug: cat.slug,
           description: cat.description || "Explore our amazing content",
           episodeCount: categoryVideos.length,
           videos: categoryVideos.slice(0, 4), // Show first 4 videos
@@ -123,6 +123,7 @@ function Home() {
         categoriesWithVideos.push({
           _id: "uncategorized",
           name: "Uncategorized",
+          slug: "uncategorized",
           description: "Other amazing content",
           episodeCount: uncategorizedVideos.length,
           videos: uncategorizedVideos.slice(0, 4),
