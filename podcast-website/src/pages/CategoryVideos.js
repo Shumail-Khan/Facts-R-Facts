@@ -226,9 +226,8 @@ function CategoryVideos() {
                         <button
                           key={duration}
                           onClick={() => setSelectedDuration(duration)}
-                          className={`px-4 py-2 rounded-lg capitalize transition-colors ${
-                            selectedDuration === duration ? `bg-gradient-to-r ${themeColor} text-white` : "bg-white/5 text-gray-400 hover:bg-white/10"
-                          }`}
+                          className={`px-4 py-2 rounded-lg capitalize transition-colors ${selectedDuration === duration ? `bg-gradient-to-r ${themeColor} text-white` : "bg-white/5 text-gray-400 hover:bg-white/10"
+                            }`}
                         >
                           {duration}
                         </button>
@@ -250,61 +249,85 @@ function CategoryVideos() {
       </motion.div>
 
       {/* Videos Grid */}
-      <motion.div variants={containerVariants} initial="hidden" animate="visible" className="relative px-4 pb-20 mx-auto max-w-7xl">
+      <motion.div
+        variants={containerVariants}
+        initial={false} // prevent re-animations
+        animate="visible"
+        className="relative px-4 pb-20 mx-auto max-w-7xl"
+      >
         {filteredVideos.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredVideos.map((video) => (
-              <motion.div key={video._id} variants={itemVariants} whileHover={{ y: -5 }} layout className="group cursor-pointer">
-                <div className="bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden border border-white/10 hover:border-white/20 transition-all duration-300">
-                  <div className="relative aspect-video overflow-hidden">
-                    <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                      <motion.div whileHover={{ scale: 1.2 }} className={`w-16 h-16 bg-gradient-to-r ${themeColor} rounded-full flex items-center justify-center`}>
-                        <PlayIcon className="w-8 h-8 text-white" />
-                      </motion.div>
-                    </div>
-                    {video.duration && (
-                      <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/70 rounded text-xs text-white flex items-center gap-1">
-                        <ClockIcon className="w-3 h-3" />
-                        {video.duration}
+            <AnimatePresence>
+              {filteredVideos.map((video) => (
+                <motion.div
+                  key={video._id}
+                  variants={itemVariants}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  whileHover={{ y: -5 }}
+                  className="group cursor-pointer"
+                >
+                  <div className="bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden border border-white/10 hover:border-white/20 transition-all duration-300">
+                    <div className="relative aspect-video min-h-[150px] overflow-hidden">
+                      <img
+                        src={video.thumbnail}
+                        alt={video.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <motion.div
+                          whileHover={{ scale: 1.2 }}
+                          className={`w-16 h-16 bg-gradient-to-r ${themeColor} rounded-full flex items-center justify-center`}
+                        >
+                          <PlayIcon className="w-8 h-8 text-white" />
+                        </motion.div>
                       </div>
-                    )}
-                    {video.featured && (
-                      <div className="absolute top-2 left-2 px-2 py-1 bg-yellow-500/90 rounded text-xs text-white">Featured</div>
-                    )}
+                      {video.duration && (
+                        <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/70 rounded text-xs text-white flex items-center gap-1">
+                          <ClockIcon className="w-3 h-3" />
+                          {video.duration}
+                        </div>
+                      )}
+                      {video.featured && (
+                        <div className="absolute top-2 left-2 px-2 py-1 bg-yellow-500/90 rounded text-xs text-white">
+                          Featured
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-white font-semibold mb-2 line-clamp-1 group-hover:text-red-400 transition-colors">{video.title}</h3>
+                      <p className="text-gray-400 text-sm mb-3 line-clamp-2">{video.description}</p>
+                      {video.poet && (
+                        <div className="flex gap-2 mb-3">
+                          <span className="px-2 py-1 bg-red-500/20 rounded text-xs text-red-300">{video.poet}</span>
+                          <span className="px-2 py-1 bg-blue-500/20 rounded text-xs text-blue-300">{video.language}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <div className="flex items-center gap-3">
+                          <span className="flex items-center gap-1"><EyeIcon className="w-3 h-3" />{formatNumber(video.views)}</span>
+                          <span className="flex items-center gap-1"><ChatIcon className="w-3 h-3" />{video.comments}</span>
+                        </div>
+                        <span className="flex items-center gap-1"><CalendarIcon className="w-3 h-3" />{new Date(video.date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
+                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleLike(video._id)} className="flex items-center gap-1 text-gray-400 hover:text-red-500 transition-colors">
+                          {likedVideos[video._id] ? <HeartIconSolid className="w-4 h-4 text-red-500" /> : <HeartIcon className="w-4 h-4" />}
+                          <span className="text-xs">{formatNumber(video.likes)}</span>
+                        </motion.button>
+                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="text-gray-400 hover:text-blue-500 transition-colors">
+                          <ShareIcon className="w-4 h-4" />
+                        </motion.button>
+                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="text-gray-400 hover:text-green-500 transition-colors">
+                          <ChatIcon className="w-4 h-4" />
+                        </motion.button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="p-4">
-                    <h3 className="text-white font-semibold mb-2 line-clamp-1 group-hover:text-red-400 transition-colors">{video.title}</h3>
-                    <p className="text-gray-400 text-sm mb-3 line-clamp-2">{video.description}</p>
-                    {video.poet && (
-                      <div className="flex gap-2 mb-3">
-                        <span className="px-2 py-1 bg-red-500/20 rounded text-xs text-red-300">{video.poet}</span>
-                        <span className="px-2 py-1 bg-blue-500/20 rounded text-xs text-blue-300">{video.language}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1"><EyeIcon className="w-3 h-3" />{formatNumber(video.views)}</span>
-                        <span className="flex items-center gap-1"><ChatIcon className="w-3 h-3" />{video.comments}</span>
-                      </div>
-                      <span className="flex items-center gap-1"><CalendarIcon className="w-3 h-3" />{new Date(video.date).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
-                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleLike(video._id)} className="flex items-center gap-1 text-gray-400 hover:text-red-500 transition-colors">
-                        {likedVideos[video._id] ? <HeartIconSolid className="w-4 h-4 text-red-500" /> : <HeartIcon className="w-4 h-4" />}
-                        <span className="text-xs">{formatNumber(video.likes)}</span>
-                      </motion.button>
-                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="text-gray-400 hover:text-blue-500 transition-colors">
-                        <ShareIcon className="w-4 h-4" />
-                      </motion.button>
-                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="text-gray-400 hover:text-green-500 transition-colors">
-                        <ChatIcon className="w-4 h-4" />
-                      </motion.button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         ) : (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
@@ -313,7 +336,6 @@ function CategoryVideos() {
           </motion.div>
         )}
       </motion.div>
-
       {/* Floating Music Note */}
       <div className="fixed bottom-10 right-10 pointer-events-none z-50">
         <motion.div
