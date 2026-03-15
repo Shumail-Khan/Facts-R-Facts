@@ -4,6 +4,7 @@ const cors = require("cors");
 const connectDB = require("./config/db"); // Use the DB connection file
 const adminRoutes = require("./routes/adminRoutes");
 const videoRoutes = require("./routes/videoRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
 
 const app = express();
 
@@ -11,12 +12,18 @@ const app = express();
 connectDB(); // centralized DB connection
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000', // Your React app URL
+  credentials: true, // Allow cookies/authentication headers
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 app.use(express.json());
 
 // Routes
 app.use("/api/admin", adminRoutes);
 app.use("/api/videos", videoRoutes);
+app.use("/api/categories", categoryRoutes);
 
 // Start the server
 const PORT = process.env.PORT || 5000;
