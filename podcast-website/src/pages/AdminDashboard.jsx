@@ -74,7 +74,7 @@ function AdminDashboard() {
         id: video._id,
         title: video.title,
         description: video.description || "No description available",
-        category: video.category || "Uncategorized",
+        category: video.category.name || "Uncategorized",
         views: video.views || 0,
         likes: video.likes || 0,
         comments: video.comments || 0,

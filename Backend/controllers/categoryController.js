@@ -32,7 +32,7 @@ exports.getCategories = async (req, res) => {
       categories.map(async (cat) => {
 
         const episodeCount = await Video.countDocuments({
-          category: cat.name
+          category: cat._id
         });
 
         return {

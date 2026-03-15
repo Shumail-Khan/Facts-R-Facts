@@ -4,7 +4,10 @@ const mongoose = require("mongoose");
 const videoSchema = new mongoose.Schema({
     title: { type: String, required: true },
     description: String,
-    category: { type: String, required: true }, // Red Mic / Qalander / Naama
+    category: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Category"
+    }, // Red Mic / Qalander / Naama
     thumbnailUrl: String,
     videoUrl: { type: String, required: true },
     duration: String,

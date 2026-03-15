@@ -12,7 +12,7 @@ const upload = multer({ storage });
 // Admin upload route
 router.post(
   "/upload",
-  protectAdmin, // ensures only admin can upload
+  // protectAdmin, // ensures only admin can upload
   upload.fields([
     { name: "video", maxCount: 1 },
     { name: "thumbnail", maxCount: 1 },

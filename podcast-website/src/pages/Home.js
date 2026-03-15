@@ -41,13 +41,13 @@ function Home() {
 
   // Category icons mapping with red theme
   const categoryIcons = {
-    "Red Mic": <MicrophoneIcon className="w-8 h-8 text-red-600" />,
-    "Pukhtun Chronicles": <MusicNoteIcon className="w-8 h-8 text-red-500" />,
-    "رشتیا رشتیا وی": <SparklesIcon className="w-8 h-8 text-red-400" />
+    "Red Mic": <MicrophoneIcon className="w-8 h-8 text-green-600" />,
+    "Pukhtun Chronicles": <MusicNoteIcon className="w-8 h-8 text-green-500" />,
+    "رشتیا رشتیا وی": <SparklesIcon className="w-8 h-8 text-green-400" />
   };
 
   // Default icon for categories without specific icon
-  const defaultIcon = <SparklesIcon className="w-8 h-8 text-red-500" />;
+  const defaultIcon = <SparklesIcon className="w-8 h-8 text-blue-500" />;
 
   useEffect(() => {
     fetchData();
@@ -64,8 +64,8 @@ function Home() {
         API.get("/categories")
       ]);
 
-      console.log('Videos Response:', videosResponse.data);
-      console.log('Categories Response:', categoriesResponse.data);
+      // console.log('Videos Response:', videosResponse.data);
+      // console.log('Categories Response:', categoriesResponse.data);
 
       const videos = Array.isArray(videosResponse.data) ? videosResponse.data :
         (videosResponse.data.videos || []);
@@ -74,6 +74,7 @@ function Home() {
         (categoriesResponse.data.categories || []);
 
       // Format videos
+      console.log(videos);
       const formattedVideos = videos.map(video => ({
         id: video._id,
         title: video.title || "Untitled",
@@ -104,6 +105,7 @@ function Home() {
           v => v.categoryId === cat._id || v.category === cat.name
         );
 
+        console.log("THis is cat variable", cat);
         return {
           _id: cat._id,
           name: cat.name,
