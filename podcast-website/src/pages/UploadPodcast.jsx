@@ -33,12 +33,20 @@ function UploadPodcast() {
   const [showControls, setShowControls] = useState(true);
   const [videoError, setVideoError] = useState(false);
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+  const [categories, setCategories] = useState([]);
 
-  const categories = [
-    { id: "red-mic", name: "Red Mic", icon: "🎤", color: "red" },
-    { id: "pakhtun-chronicles", name: "Pukhtun Chronicles", icon: "🎵", color: "purple" },
-    { id: "رشتیا-رشتیا-وی", name: "رشتیا رشتیا وی", icon: "⭐", color: "blue" }
-  ];
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/categories");
+        setCategories(res.data);
+      } catch (error) {
+        console.error("Failed to fetch categories", error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   // Handle video playback
   const togglePlay = () => {
@@ -466,33 +474,47 @@ function UploadPodcast() {
                 />
               </div>
 
-              {/* Category Selection */}
+              {/* Category Selection - FIXED */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">Category *</label>
-                <div className="grid grid-cols-3 gap-3">
+                <label className="block text-sm font-medium text-gray-300">
+                  Category *
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {categories.map((cat) => (
                     <label
-                      key={cat.id}
-                      className={`relative flex items-center justify-center px-4 py-3 rounded-lg border-2 cursor-pointer transition-all ${formData.category === cat.id
-                          ? `border-${cat.color.split('-')[1]}-500 bg-${cat.color.split('-')[1]}-500/10`
-                          : 'border-gray-600 hover:border-gray-500'
+                      key={cat._id}
+                      className={`relative flex items-center justify-center px-4 py-3 rounded-lg border-2 cursor-pointer transition-all 
+                        ${formData.category === cat._id
+                          ? "border-red-500 bg-red-500/10 ring-2 ring-red-500/20"
+                          : "border-gray-600 hover:border-gray-500 bg-gray-700/30"
                         }`}
                     >
                       <input
                         type="radio"
                         name="category"
-                        value={cat.id}
-                        checked={formData.category === cat.id}
+                        value={cat._id}
+                        checked={formData.category === cat._id}
                         onChange={handleInputChange}
                         className="absolute opacity-0"
+                        required
                       />
-                      <span className="text-lg mr-2">{cat.icon}</span>
-                      <span className={`text-sm font-medium ${formData.category === cat.id ? 'text-white' : 'text-gray-400'}`}>
+                      <span
+                        className={`text-sm font-medium ${
+                          formData.category === cat._id
+                            ? "text-white"
+                            : "text-gray-400"
+                        }`}
+                      >
                         {cat.name}
                       </span>
                     </label>
                   ))}
                 </div>
+                {categories.length === 0 && (
+                  <p className="text-sm text-yellow-500 mt-2">
+                    Loading categories...
+                  </p>
+                )}
               </div>
 
               {/* Language Selection */}
@@ -763,8 +785,8 @@ function UploadPodcast() {
                     </h2>
                     {formData.category && (
                       <div className="flex items-center space-x-2 flex-wrap gap-2">
-                        <span className={`px-3 py-1 bg-gradient-to-r ${categories.find(c => c.id === formData.category)?.color} rounded-full text-white text-xs font-medium`}>
-                          {categories.find(c => c.id === formData.category)?.name}
+                        <span className="px-3 py-1 bg-gradient-to-r from-red-500 to-red-600 rounded-full text-white text-xs font-medium">
+                          {categories.find(c => c._id === formData.category)?.name || "Category"}
                         </span>
                         <span className="text-sm text-gray-400">
                           {formData.language}

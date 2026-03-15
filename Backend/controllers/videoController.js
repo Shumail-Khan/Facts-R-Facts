@@ -73,7 +73,7 @@ exports.getVideos = async (req, res) => {
   try {
     const { category } = req.query;
     const filter = category ? { category } : {};
-    const videos = await Video.find(filter).sort({ date: -1 }); // latest first
+    const videos = await Video.find(filter).sort({ date: -1 }).populate("category"); // latest first
     res.status(200).json(videos);
   } catch (err) {
     console.error(err);
