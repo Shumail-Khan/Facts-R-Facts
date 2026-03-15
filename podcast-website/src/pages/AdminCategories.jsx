@@ -45,7 +45,8 @@ function AdminCategories() {
       setLoading(true);
       await axios.post("http://localhost:5000/api/categories", {
         name,
-        description
+        description,
+        icon: name // You can add icon upload functionality later
       });
 
       setName("");
