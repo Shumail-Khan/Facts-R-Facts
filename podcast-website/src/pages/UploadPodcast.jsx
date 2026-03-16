@@ -48,7 +48,18 @@ function UploadPodcast() {
     fetchCategories();
   }, []);
 
-  
+  useEffect(() => {
+    if (!thumbnailFile && formData.category) {
+      const selectedCategory = categories.find(
+        (c) => c._id === formData.category
+      );
+
+      if (selectedCategory?.image) {
+        setPreviewUrl(selectedCategory.image);
+      }
+    }
+  }, [formData.category, thumbnailFile, categories]);
+
   // Handle video playback
   const togglePlay = () => {
     if (videoRef.current && isVideoLoaded) {
@@ -188,10 +199,17 @@ function UploadPodcast() {
 
   const removeThumbnail = () => {
     setThumbnailFile(null);
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
+
+    const selectedCategory = categories.find(
+      (c) => c._id === formData.category
+    );
+
+    if (selectedCategory?.image) {
+      setPreviewUrl(selectedCategory.image);
+    } else {
+      setPreviewUrl("");
     }
-    setPreviewUrl("");
+
     setFormData((prev) => ({ ...prev, thumbnail: "" }));
   };
 
@@ -224,6 +242,7 @@ function UploadPodcast() {
   // Form submit
   const submitHandler = async (e) => {
     e.preventDefault();
+
     if (!selectedVideo) {
       alert("Please select a video file to upload.");
       return;
@@ -238,7 +257,18 @@ function UploadPodcast() {
     try {
       const data = new FormData();
       data.append("video", selectedVideo);
-      if (thumbnailFile) data.append("thumbnail", thumbnailFile);
+
+      if (thumbnailFile) {
+        data.append("thumbnail", thumbnailFile);
+      } else {
+        const selectedCategory = categories.find(
+          (c) => c._id === formData.category
+        );
+
+        if (selectedCategory?.image) {
+          data.append("thumbnailUrl", selectedCategory.image);
+        }
+      }
 
       data.append("title", formData.title);
       data.append("description", formData.description);
@@ -500,11 +530,10 @@ function UploadPodcast() {
                         required
                       />
                       <span
-                        className={`text-sm font-medium ${
-                          formData.category === cat._id
-                            ? "text-white"
-                            : "text-gray-400"
-                        }`}
+                        className={`text-sm font-medium ${formData.category === cat._id
+                          ? "text-white"
+                          : "text-gray-400"
+                          }`}
                       >
                         {cat.name}
                       </span>

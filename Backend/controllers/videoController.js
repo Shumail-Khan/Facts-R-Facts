@@ -30,7 +30,7 @@ exports.uploadVideo = async (req, res) => {
       streamifier.createReadStream(videoFile.buffer).pipe(stream);
     });
 
-    let thumbnailUrl = "";
+    let thumbnailUrl = req.body.thumbnailUrl || "";
 
     if (thumbnailFile) {
       const thumbnailUpload = await new Promise((resolve, reject) => {
@@ -49,7 +49,6 @@ exports.uploadVideo = async (req, res) => {
 
       thumbnailUrl = thumbnailUpload.secure_url;
     }
-
     const newVideo = await Video.create({
       title: req.body.title,
       description: req.body.description,
