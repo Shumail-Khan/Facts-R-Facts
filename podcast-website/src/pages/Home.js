@@ -79,7 +79,7 @@ function Home() {
         id: video._id,
         title: video.title || "Untitled",
         description: video.description || "No description available",
-        thumbnail: video.thumbnail || video.cloudinaryUrl || 'https://via.placeholder.com/500x280?text=No+Thumbnail',
+        thumbnail: video.thumbnailUrl || video.cloudinaryUrl || 'https://via.placeholder.com/500x280?text=No+Thumbnail',
         duration: formatDuration(video.duration),
         date: formatDateSafely(video.createdAt),
         views: video.views?.toString() || "0",

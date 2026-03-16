@@ -12,7 +12,7 @@ function UploadPodcast() {
     category: "",
     thumbnail: "",
     duration: "",
-    language: "Urdu",
+    language: "Pashto",
     featured: false,
   });
 
@@ -48,6 +48,7 @@ function UploadPodcast() {
     fetchCategories();
   }, []);
 
+  
   // Handle video playback
   const togglePlay = () => {
     if (videoRef.current && isVideoLoaded) {

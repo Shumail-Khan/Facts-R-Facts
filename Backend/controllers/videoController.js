@@ -8,6 +8,11 @@ exports.uploadVideo = async (req, res) => {
     const videoFile = req.files.video[0];
     const thumbnailFile = req.files.thumbnail?.[0];
 
+
+    if (!videoFile) {
+      return res.status(400).json({ message: "Video file is required" });
+    }
+
     // Upload video using stream
     const videoUpload = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
@@ -50,7 +55,7 @@ exports.uploadVideo = async (req, res) => {
       description: req.body.description,
       category: req.body.category,
       videoUrl: videoUpload.secure_url,
-      thumbnail: thumbnailUrl,
+      thumbnailUrl: thumbnailUrl,
       duration: req.body.duration,
       tags: req.body.tags,
       language: req.body.language,
