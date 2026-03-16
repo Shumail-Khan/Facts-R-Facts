@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import API from "../services/api";
 import Navbar from "../components/Navbar";
+import VideoPlayer from "../components/VideoPlayer";
+
 import {
   MusicNoteIcon,
   FilterIcon,
@@ -30,6 +32,7 @@ function CategoryVideos() {
   const [selectedDuration, setSelectedDuration] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [likedVideos, setLikedVideos] = useState({});
+  const [selectedVideo, setSelectedVideo] = useState(null);
 
   // Fetch category + videos from API
   useEffect(() => {
@@ -50,8 +53,8 @@ function CategoryVideos() {
       .finally(() => setLoading(false));
   }, [slug]);
 
-  console.log('Fetched Category:', category);
-  console.log('Fetched Videos:', videos);
+  // console.log('Fetched Category:', category);
+  // console.log('Fetched Videos:', videos);
   // Filter and sort videos
   useEffect(() => {
     if (!videos) return;
@@ -93,6 +96,17 @@ function CategoryVideos() {
     setFilteredVideos(result);
   }, [videos, sortBy, selectedDuration, searchQuery]);
 
+  const handlePlayClick = (e, video) => {
+    e.stopPropagation();
+    setSelectedVideo(video);
+    document.body.style.overflow = "hidden";
+  };
+
+  const handleClosePlayer = () => {
+    setSelectedVideo(null);
+    document.body.style.overflow = "unset";
+  };
+
   const handleLike = (videoId) => {
     setLikedVideos(prev => ({
       ...prev,
@@ -133,6 +147,30 @@ function CategoryVideos() {
   return (
     <div className="min-h-screen bg-gray-900 overflow-hidden">
       <Navbar />
+      <AnimatePresence>
+        {selectedVideo && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+            onClick={handleClosePlayer}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="w-full max-w-4xl bg-gray-900 rounded-xl overflow-hidden shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <VideoPlayer
+                video={selectedVideo}
+                onClose={handleClosePlayer}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Category Header */}
       <motion.div initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="relative px-4 pt-20 pb-12 mx-auto max-w-7xl">
@@ -271,11 +309,14 @@ function CategoryVideos() {
                   <div className="bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden border border-white/10 hover:border-white/20 transition-all duration-300">
                     <div className="relative aspect-video min-h-[150px] overflow-hidden">
                       <img
-                        src={video.thumbnail}
+                        src={video.thumbnailUrl}
                         alt={video.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                      <div
+                        className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center cursor-pointer"
+                        onClick={(e) => handlePlayClick(e, video)}
+                      >
                         <motion.div
                           whileHover={{ scale: 1.2 }}
                           className={`w-16 h-16 bg-gradient-to-r ${themeColor} rounded-full flex items-center justify-center`}
