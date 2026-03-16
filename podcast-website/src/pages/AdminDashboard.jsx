@@ -13,7 +13,9 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  BarChart,
+  Bar
 } from "recharts";
 
 function AdminDashboard() {
@@ -28,7 +30,10 @@ function AdminDashboard() {
     totalLikes: 0,
     totalComments: 0,
     totalCategories: 3,
-    totalUsers: 2345
+    totalUsers: 2345,
+    avgLikesPerVideo: 0,
+    avgCommentsPerVideo: 0,
+    engagementRate: 0
   });
 
   const [recentUploads, setRecentUploads] = useState([]);
@@ -45,9 +50,28 @@ function AdminDashboard() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [timeRange, setTimeRange] = useState('week'); // week, month, year
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [comments, setComments] = useState({});
+  const [showComments, setShowComments] = useState(false);
+  const [currentCommentVideo, setCurrentCommentVideo] = useState(null);
+  const [commentStats, setCommentStats] = useState({
+    totalComments: 0,
+    avgCommentsPerVideo: 0,
+    mostCommentedVideo: null,
+    recentComments: []
+  });
+  const [likeStats, setLikeStats] = useState({
+    totalLikes: 0,
+    avgLikesPerVideo: 0,
+    mostLikedVideo: null,
+    likeTrend: []
+  });
 
   useEffect(() => {
     fetchVideos();
+    fetchComments();
+    fetchLikeStats();
     
     // Add ESC key listener
     const handleEscKey = (event) => {
@@ -74,14 +98,15 @@ function AdminDashboard() {
         id: video._id,
         title: video.title,
         description: video.description || "No description available",
-        category: video.category.name || "Uncategorized",
+        category: video.category?.name || "Uncategorized",
         views: video.views || 0,
         likes: video.likes || 0,
         comments: video.comments || 0,
         date: video.createdAt ? new Date(video.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
         thumbnail: video.thumbnail || "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=200&auto=format",
         videoUrl: video.videoUrl,
-        duration: video.duration || "0:00"
+        duration: video.duration || "0:00",
+        createdAt: video.createdAt
       }));
 
       // Sort by date (most recent first) and take latest 5
@@ -92,20 +117,35 @@ function AdminDashboard() {
       const totalViews = videos.reduce((sum, video) => sum + video.views, 0);
       const totalLikes = videos.reduce((sum, video) => sum + video.likes, 0);
       const totalComments = videos.reduce((sum, video) => sum + video.comments, 0);
+      const avgLikesPerVideo = videos.length > 0 ? (totalLikes / videos.length).toFixed(1) : 0;
+      const avgCommentsPerVideo = videos.length > 0 ? (totalComments / videos.length).toFixed(1) : 0;
+      const engagementRate = videos.length > 0 
+        ? ((totalLikes + totalComments) / (totalViews || 1) * 100).toFixed(1) 
+        : 0;
 
       setStats(prev => ({
         ...prev,
         totalVideos: videos.length,
         totalViews,
         totalLikes,
-        totalComments
+        totalComments,
+        avgLikesPerVideo,
+        avgCommentsPerVideo,
+        engagementRate
       }));
 
       // Update category stats
       const categoryCounts = {};
+      const categoryViews = {};
+      const categoryLikes = {};
+      const categoryComments = {};
+      
       videos.forEach(video => {
         if (video.category) {
           categoryCounts[video.category] = (categoryCounts[video.category] || 0) + 1;
+          categoryViews[video.category] = (categoryViews[video.category] || 0) + video.views;
+          categoryLikes[video.category] = (categoryLikes[video.category] || 0) + video.likes;
+          categoryComments[video.category] = (categoryComments[video.category] || 0) + video.comments;
         }
       });
 
@@ -119,13 +159,18 @@ function AdminDashboard() {
       const updatedCategoryStats = Object.keys(categoryCounts).map(cat => ({
         name: cat,
         videos: categoryCounts[cat],
-        views: videos.filter(v => v.category === cat).reduce((sum, v) => sum + v.views, 0),
+        views: categoryViews[cat] || 0,
+        likes: categoryLikes[cat] || 0,
+        comments: categoryComments[cat] || 0,
         color: categoryColors[cat] || categoryColors.Default
       }));
 
       if (updatedCategoryStats.length > 0) {
         setCategoryStats(updatedCategoryStats);
       }
+
+      // Generate views data based on time range
+      generateViewsData(videos, timeRange);
 
       setError(null);
     } catch (error) {
@@ -134,6 +179,114 @@ function AdminDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchComments = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/comments");
+      const commentsData = response.data;
+      
+      // Group comments by video
+      const commentsByVideo = {};
+      commentsData.forEach(comment => {
+        if (!commentsByVideo[comment.videoId]) {
+          commentsByVideo[comment.videoId] = [];
+        }
+        commentsByVideo[comment.videoId].push(comment);
+      });
+      
+      setComments(commentsByVideo);
+      
+      // Calculate comment stats
+      const totalComments = commentsData.length;
+      const videos = recentUploads.length > 0 ? recentUploads : [];
+      const avgCommentsPerVideo = videos.length > 0 ? (totalComments / videos.length).toFixed(1) : 0;
+      
+      // Find most commented video
+      let mostCommented = null;
+      let maxComments = 0;
+      Object.entries(commentsByVideo).forEach(([videoId, videoComments]) => {
+        if (videoComments.length > maxComments) {
+          maxComments = videoComments.length;
+          const video = videos.find(v => v.id === videoId);
+          if (video) {
+            mostCommented = {
+              ...video,
+              commentCount: videoComments.length
+            };
+          }
+        }
+      });
+      
+      // Get recent comments
+      const recentComments = commentsData
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5)
+        .map(comment => {
+          const video = videos.find(v => v.id === comment.videoId);
+          return {
+            ...comment,
+            videoTitle: video?.title || 'Unknown Video'
+          };
+        });
+      
+      setCommentStats({
+        totalComments,
+        avgCommentsPerVideo,
+        mostCommentedVideo: mostCommented,
+        recentComments
+      });
+      
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+    }
+  };
+
+  const fetchLikeStats = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/videos/likes/stats");
+      const likeData = response.data;
+      
+      setLikeStats({
+        totalLikes: likeData.totalLikes || 0,
+        avgLikesPerVideo: likeData.avgLikesPerVideo || 0,
+        mostLikedVideo: likeData.mostLikedVideo || null,
+        likeTrend: likeData.trend || []
+      });
+      
+    } catch (error) {
+      console.error("Error fetching like stats:", error);
+    }
+  };
+
+  const generateViewsData = (videos, range) => {
+    const days = range === 'week' ? 7 : range === 'month' ? 30 : 365;
+    const data = [];
+    const today = new Date();
+    
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toLocaleDateString('en-US', { weekday: 'short' });
+      
+      // Calculate views for this day
+      const dayViews = videos.reduce((sum, video) => {
+        const videoDate = new Date(video.createdAt);
+        if (videoDate.toDateString() === date.toDateString()) {
+          return sum + video.views;
+        }
+        return sum;
+      }, 0);
+      
+      data.push({
+        name: dateStr,
+        views: dayViews,
+        likes: Math.floor(dayViews * 0.3), // Example calculation
+        comments: Math.floor(dayViews * 0.1) // Example calculation
+      });
+    }
+    
+    setViewsData(data);
   };
 
   // Modal Video Functions
@@ -283,19 +436,19 @@ function AdminDashboard() {
   };
 
   const [categoryStats, setCategoryStats] = useState([
-    { name: "Red Mic", videos: 0, views: 0, color: "#ef4444" },
-    { name: "Qalander", videos: 0, views: 0, color: "#8b5cf6" },
-    { name: "Naama", videos: 0, views: 0, color: "#3b82f6" }
+    { name: "Red Mic", videos: 0, views: 0, likes: 0, comments: 0, color: "#ef4444" },
+    { name: "Qalander", videos: 0, views: 0, likes: 0, comments: 0, color: "#8b5cf6" },
+    { name: "Naama", videos: 0, views: 0, likes: 0, comments: 0, color: "#3b82f6" }
   ]);
 
   const [viewsData, setViewsData] = useState([
-    { name: "Mon", views: 0 },
-    { name: "Tue", views: 0 },
-    { name: "Wed", views: 0 },
-    { name: "Thu", views: 0 },
-    { name: "Fri", views: 0 },
-    { name: "Sat", views: 0 },
-    { name: "Sun", views: 0 }
+    { name: "Mon", views: 0, likes: 0, comments: 0 },
+    { name: "Tue", views: 0, likes: 0, comments: 0 },
+    { name: "Wed", views: 0, likes: 0, comments: 0 },
+    { name: "Thu", views: 0, likes: 0, comments: 0 },
+    { name: "Fri", views: 0, likes: 0, comments: 0 },
+    { name: "Sat", views: 0, likes: 0, comments: 0 },
+    { name: "Sun", views: 0, likes: 0, comments: 0 }
   ]);
 
   const handleLogout = () => {
@@ -323,11 +476,18 @@ function AdminDashboard() {
           }
         });
         fetchVideos();
+        fetchComments();
+        fetchLikeStats();
       } catch (error) {
         console.error("Error deleting video:", error);
         alert("Failed to delete video");
       }
     }
+  };
+
+  const handleViewComments = (video) => {
+    setCurrentCommentVideo(video);
+    setShowComments(true);
   };
 
   // Animation variants
@@ -425,6 +585,12 @@ function AdminDashboard() {
     </svg>
   );
 
+  const ChatIcon = () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    </svg>
+  );
+
   const ClockIcon = () => (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -455,11 +621,7 @@ function AdminDashboard() {
     </svg>
   );
 
-  const NotificationIcon = () => (
-    <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-    </svg>
-  );
+
 
   const SearchIcon = () => (
     <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -486,6 +648,12 @@ function AdminDashboard() {
     </svg>
   );
 
+  const TrendingUpIcon = () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+    </svg>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Top Navigation Bar */}
@@ -509,10 +677,28 @@ function AdminDashboard() {
             </div>
 
             <div className="flex items-center space-x-4">
+              {/* Time Range Filter */}
+              <select
+                value={timeRange}
+                onChange={(e) => {
+                  setTimeRange(e.target.value);
+                  generateViewsData(recentUploads, e.target.value);
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+                <option value="week">Last 7 Days</option>
+                <option value="month">Last 30 Days</option>
+                <option value="year">Last Year</option>
+              </select>
+
               <motion.button
                 whileHover={{ rotate: 180 }}
                 transition={{ duration: 0.3 }}
-                onClick={fetchVideos}
+                onClick={() => {
+                  fetchVideos();
+                  fetchComments();
+                  fetchLikeStats();
+                }}
                 className="p-2 hover:bg-gray-100 rounded-lg text-gray-600"
                 title="Refresh data"
               >
@@ -530,12 +716,7 @@ function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="relative">
-                <button className="p-2 hover:bg-gray-100 rounded-lg relative">
-                  <NotificationIcon />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-600 rounded-full"></span>
-                </button>
-              </div>
+              
 
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white font-bold">
@@ -571,7 +752,13 @@ function AdminDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold mb-2">Welcome back, Admin!</h2>
-              <p className="text-red-100">You have {stats.totalVideos} total videos with {formatNumber(stats.totalViews)} views</p>
+              <p className="text-red-100">You have {stats.totalVideos} total videos with {formatNumber(stats.totalViews)} views, {formatNumber(stats.totalLikes)} likes, and {formatNumber(stats.totalComments)} comments</p>
+              <div className="flex items-center gap-4 mt-4">
+                <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
+                  <TrendingUpIcon />
+                  <span className="text-sm">Engagement Rate: {stats.engagementRate}%</span>
+                </div>
+              </div>
             </div>
             <div className="hidden md:block">
               <img 
@@ -634,7 +821,7 @@ function AdminDashboard() {
                 <p className="text-2xl font-bold text-gray-800">{formatNumber(stats.totalComments)}</p>
               </div>
               <div className="p-3 bg-green-100 rounded-lg text-green-600">
-                <FolderIcon />
+                <ChatIcon />
               </div>
             </div>
           </motion.div>
@@ -650,18 +837,6 @@ function AdminDashboard() {
               </div>
             </div>
           </motion.div>
-
-          <motion.div variants={itemVariants} className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-yellow-600">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Users</p>
-                <p className="text-2xl font-bold text-gray-800">{formatNumber(stats.totalUsers)}</p>
-              </div>
-              <div className="p-3 bg-yellow-100 rounded-lg text-yellow-600">
-                <UserIcon />
-              </div>
-            </div>
-          </motion.div>
         </motion.div>
 
         {/* Quick Actions */}
@@ -669,7 +844,7 @@ function AdminDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+          className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
         >
           <Link to="/admin/upload">
             <motion.div
@@ -732,7 +907,19 @@ function AdminDashboard() {
             transition={{ delay: 0.4 }}
             className="bg-white p-6 rounded-xl shadow-lg"
           >
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Weekly Views</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Engagement Overview</h3>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="px-3 py-1 border border-gray-300 rounded-lg text-sm"
+              >
+                <option value="all">All Categories</option>
+                {categoryStats.map(cat => (
+                  <option key={cat.name} value={cat.name}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={viewsData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -740,7 +927,9 @@ function AdminDashboard() {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="views" stroke="#ef4444" strokeWidth={2} />
+                <Line type="monotone" dataKey="views" stroke="#ef4444" strokeWidth={2} name="Views" />
+                <Line type="monotone" dataKey="likes" stroke="#ec4899" strokeWidth={2} name="Likes" />
+                <Line type="monotone" dataKey="comments" stroke="#10b981" strokeWidth={2} name="Comments" />
               </LineChart>
             </ResponsiveContainer>
           </motion.div>
@@ -751,30 +940,23 @@ function AdminDashboard() {
             transition={{ delay: 0.4 }}
             className="bg-white p-6 rounded-xl shadow-lg"
           >
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Category Distribution</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Category Performance</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={categoryStats.filter(cat => cat.videos > 0)}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="videos"
-                >
-                  {categoryStats.filter(cat => cat.videos > 0).map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
+              <BarChart data={categoryStats.filter(cat => cat.videos > 0)}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
                 <Tooltip />
-              </PieChart>
+                <Legend />
+                <Bar dataKey="videos" fill="#ef4444" name="Videos" />
+                <Bar dataKey="likes" fill="#ec4899" name="Likes" />
+                <Bar dataKey="comments" fill="#10b981" name="Comments" />
+              </BarChart>
             </ResponsiveContainer>
           </motion.div>
         </div>
 
-        {/* Recent Uploads */}
+        {/* Recent Uploads and Comments Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -860,6 +1042,10 @@ function AdminDashboard() {
                             <span className="ml-1">{formatNumber(upload.likes)}</span>
                           </span>
                           <span className="flex items-center">
+                            <ChatIcon />
+                            <span className="ml-1">{formatNumber(upload.comments)}</span>
+                          </span>
+                          <span className="flex items-center">
                             <ClockIcon />
                             <span className="ml-1">{upload.date}</span>
                           </span>
@@ -873,6 +1059,13 @@ function AdminDashboard() {
                           title="Play video"
                         >
                           <PlayIcon />
+                        </button>
+                        <button 
+                          onClick={() => handleViewComments(upload)}
+                          className="p-2 hover:bg-green-100 rounded-lg text-green-600 transition-colors"
+                          title="View comments"
+                        >
+                          <ChatIcon />
                         </button>
                         <button 
                           onClick={() => handleEdit(upload.id)}
@@ -896,7 +1089,7 @@ function AdminDashboard() {
             )}
           </motion.div>
 
-          {/* Notifications */}
+          {/* Recent Comments */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -904,41 +1097,54 @@ function AdminDashboard() {
             className="bg-white rounded-xl shadow-lg p-6"
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Notifications</h3>
-              <span className="bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full">
-                {recentUploads.length > 0 ? `${recentUploads.length} New` : '0 New'}
+              <h3 className="text-lg font-semibold text-gray-800">Recent Comments</h3>
+              <span className="bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full">
+                {commentStats.totalComments} Total
               </span>
             </div>
 
             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 #f1f5f9' }}>
-              {recentUploads.slice(0, 3).map((upload, index) => (
-                <div key={`notif-${upload.id}`} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                  <div className="p-2 bg-blue-100 rounded-full text-blue-600">
-                    <UploadIcon />
+              {commentStats.recentComments.length > 0 ? (
+                commentStats.recentComments.map((comment, index) => (
+                  <div key={index} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                    <div className="p-2 bg-green-100 rounded-full text-green-600">
+                      <ChatIcon />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-800 font-medium">{comment.videoTitle}</p>
+                      <p className="text-sm text-gray-600 mt-1">{comment.text}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        By {comment.user || 'Anonymous'} • {new Date(comment.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-800">New video uploaded: "{upload.title}"</p>
-                    <p className="text-xs text-gray-500 mt-1">{upload.date}</p>
-                  </div>
-                </div>
-              ))}
-
-              {recentUploads.length === 0 && (
+                ))
+              ) : (
                 <div className="flex items-start space-x-3 p-3">
                   <div className="p-2 bg-gray-100 rounded-full text-gray-600">
-                    <NotificationIcon />
+                    <ChatIcon />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm text-gray-800">Welcome to Admin Dashboard</p>
-                    <p className="text-xs text-gray-500 mt-1">Start by uploading your first video</p>
+                    <p className="text-sm text-gray-800">No comments yet</p>
+                    <p className="text-xs text-gray-500 mt-1">Comments will appear here when users interact</p>
                   </div>
                 </div>
               )}
             </div>
 
-            <Link to="/admin/upload">
-              <button className="w-full mt-4 py-2 text-sm text-red-600 hover:text-red-700 font-medium border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
-                Upload New Video
+            {commentStats.mostCommentedVideo && (
+              <div className="mt-4 p-3 bg-gradient-to-r from-green-50 to-green-100 rounded-lg">
+                <p className="text-xs text-green-600 font-medium">Most Engaging Video</p>
+                <p className="text-sm font-semibold text-gray-800 mt-1">{commentStats.mostCommentedVideo.title}</p>
+                <p className="text-xs text-gray-600 mt-1">
+                  {commentStats.mostCommentedVideo.commentCount} comments • {formatNumber(commentStats.mostCommentedVideo.likes)} likes
+                </p>
+              </div>
+            )}
+
+            <Link to="/admin/comments">
+              <button className="w-full mt-4 py-2 text-sm text-green-600 hover:text-green-700 font-medium border border-green-200 rounded-lg hover:bg-green-50 transition-colors">
+                View All Comments
               </button>
             </Link>
           </motion.div>
@@ -1106,10 +1312,73 @@ function AdminDashboard() {
                     <span className="ml-1">{formatNumber(selectedVideo.likes)} likes</span>
                   </span>
                   <span className="flex items-center">
+                    <ChatIcon />
+                    <span className="ml-1">{formatNumber(selectedVideo.comments)} comments</span>
+                  </span>
+                  <span className="flex items-center">
                     <ClockIcon />
                     <span className="ml-1">{selectedVideo.date}</span>
                   </span>
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Comments Modal */}
+      <AnimatePresence>
+        {showComments && currentCommentVideo && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            onClick={() => setShowComments(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">Comments</h3>
+                  <p className="text-sm text-gray-500 mt-1">{currentCommentVideo.title}</p>
+                </div>
+                <button
+                  onClick={() => setShowComments(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <CloseIcon />
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto max-h-[60vh]">
+                {comments[currentCommentVideo.id]?.length > 0 ? (
+                  <div className="space-y-4">
+                    {comments[currentCommentVideo.id].map((comment, index) => (
+                      <div key={index} className="flex space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="font-semibold text-gray-800">{comment.user || 'Anonymous'}</p>
+                            <p className="text-xs text-gray-500">
+                              {new Date(comment.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <p className="text-gray-600 mt-1">{comment.text}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <ChatIcon />
+                    <p className="text-gray-500 mt-4">No comments yet for this video</p>
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>

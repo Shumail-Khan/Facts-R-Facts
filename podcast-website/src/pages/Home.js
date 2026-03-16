@@ -41,13 +41,13 @@ function Home() {
 
   // Category icons mapping with red theme
   const categoryIcons = {
-    "Red Mic": <MicrophoneIcon className="w-8 h-8 text-green-600" />,
-    "Pukhtun Chronicles": <MusicNoteIcon className="w-8 h-8 text-green-500" />,
-    "رشتیا رشتیا وی": <SparklesIcon className="w-8 h-8 text-green-400" />
+    "Red Mic": <MicrophoneIcon className="w-8 h-8 text-red-600" />,
+    "Pukhtun Chronicles": <MusicNoteIcon className="w-8 h-8 text-red-500" />,
+    "رشتیا رشتیا وی": <SparklesIcon className="w-8 h-8 text-red-400" />
   };
 
   // Default icon for categories without specific icon
-  const defaultIcon = <SparklesIcon className="w-8 h-8 text-blue-500" />;
+  const defaultIcon = <SparklesIcon className="w-8 h-8 text-red-500" />;
 
   useEffect(() => {
     fetchData();
@@ -64,9 +64,6 @@ function Home() {
         API.get("/categories")
       ]);
 
-      // console.log('Videos Response:', videosResponse.data);
-      // console.log('Categories Response:', categoriesResponse.data);
-
       const videos = Array.isArray(videosResponse.data) ? videosResponse.data :
         (videosResponse.data.videos || []);
 
@@ -74,7 +71,6 @@ function Home() {
         (categoriesResponse.data.categories || []);
 
       // Format videos
-      // console.log(videos);
       const formattedVideos = videos.map(video => ({
         id: video._id,
         title: video.title || "Untitled",
@@ -83,8 +79,8 @@ function Home() {
         duration: formatDuration(video.duration),
         date: formatDateSafely(video.createdAt),
         views: video.views?.toString() || "0",
-        likes: video.likes?.length || 0,
-        comments: video.comments?.length || 0,
+        likes: video.likes || 0,
+        comments: video.comments|| 0,
         videoUrl: video.videoUrl || video.cloudinaryUrl || '',
         category: video.category?.name || "Uncategorized",
         categoryId: video.category?._id || null
@@ -196,6 +192,7 @@ function Home() {
     setSelectedVideo(video);
     document.body.style.overflow = 'hidden';
   };
+
   const handleClosePlayer = () => {
     setSelectedVideo(null);
     document.body.style.overflow = 'unset';
@@ -203,37 +200,55 @@ function Home() {
 
   const handleLike = async (e, videoId) => {
     e.stopPropagation();
+    
+    // Optimistic update
+    const isLiked = likedVideos[videoId];
+    const newLikedState = !isLiked;
+    
+    setLikedVideos(prev => ({
+      ...prev,
+      [videoId]: newLikedState
+    }));
+
+    setFeaturedVideos(prev => prev.map(video =>
+      video.id === videoId
+        ? { ...video, likes: video.likes + (newLikedState ? 1 : -1) }
+        : video
+    ));
+
+    setCategories(prev => prev.map(category => ({
+      ...category,
+      videos: category.videos.map(video =>
+        video.id === videoId
+          ? { ...video, likes: video.likes + (newLikedState ? 1 : -1) }
+          : video
+      )
+    })));
+
     try {
+      await API.post(`/videos/${videoId}/like`);
+    } catch (err) {
+      console.error("Error liking video:", err);
+      // Revert on error
       setLikedVideos(prev => ({
         ...prev,
-        [videoId]: !prev[videoId]
+        [videoId]: isLiked
       }));
 
-      await API.post(`/videos/${videoId}/like`);
-
-      // Update like count in featured videos
       setFeaturedVideos(prev => prev.map(video =>
         video.id === videoId
-          ? { ...video, likes: video.likes + (likedVideos[videoId] ? -1 : 1) }
+          ? { ...video, likes: video.likes + (isLiked ? 1 : -1) }
           : video
       ));
 
-      // Update like count in categories videos
       setCategories(prev => prev.map(category => ({
         ...category,
         videos: category.videos.map(video =>
           video.id === videoId
-            ? { ...video, likes: video.likes + (likedVideos[videoId] ? -1 : 1) }
+            ? { ...video, likes: video.likes + (isLiked ? 1 : -1) }
             : video
         )
       })));
-
-    } catch (err) {
-      console.error("Error liking video:", err);
-      setLikedVideos(prev => ({
-        ...prev,
-        [videoId]: !prev[videoId]
-      }));
     }
   };
 
@@ -270,7 +285,7 @@ function Home() {
     try {
       const response = await API.post(`/videos/${currentCommentVideo.id}/comments`, {
         text: newComment,
-        user: "Anonymous" // You can replace with actual user name when auth is implemented
+        user: "Anonymous"
       });
 
       setComments(prev => ({
@@ -278,7 +293,6 @@ function Home() {
         [currentCommentVideo.id]: [...(prev[currentCommentVideo.id] || []), response.data]
       }));
 
-      // Update comment count in video
       setFeaturedVideos(prev => prev.map(video =>
         video.id === currentCommentVideo.id
           ? { ...video, comments: video.comments + 1 }
@@ -375,7 +389,7 @@ function Home() {
         {[...Array(30)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-1 h-1 bg-white/10 rounded-full"
+            className="absolute w-1 h-1 bg-red-500/20 rounded-full"
             initial={{
               x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1000),
               y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 1000),
@@ -451,7 +465,7 @@ function Home() {
             <img
               src="/Logo.jpeg"
               alt="AWAMI NATIONAL PARTY"
-              className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-red-500 shadow-lg"
+              className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-red-500 shadow-lg shadow-red-500/20"
               onError={(e) => {
                 e.target.src = 'https://via.placeholder.com/160x160?text=Logo';
               }}
@@ -463,7 +477,7 @@ function Home() {
               variants={itemVariants}
               className="text-4xl md:text-5xl font-bold text-white mb-4"
             >
-              Welcome to Facts Are Facts
+              Welcome to <span className="text-red-500">Facts Are Facts</span>
             </motion.h1>
 
             <motion.p
@@ -525,7 +539,7 @@ function Home() {
                 key={video.id}
                 variants={itemVariants}
                 whileHover={{ y: -5 }}
-                className="group bg-gray-800/50 backdrop-blur-lg rounded-xl overflow-hidden border border-gray-700 hover:border-red-500/30 transition-all duration-300"
+                className="group bg-gradient-to-br from-red-600/10 to-red-700/5 backdrop-blur-lg rounded-xl overflow-hidden border border-red-500/20 hover:border-red-500/50 shadow-lg shadow-red-500/10 hover:shadow-red-500/20 transition-all duration-300"
               >
                 {/* Thumbnail with Play Button */}
                 <div className="relative aspect-video overflow-hidden">
@@ -538,15 +552,18 @@ function Home() {
                     }}
                   />
 
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-red-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
                   {/* Play Button Overlay */}
                   <div
-                    className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center cursor-pointer"
+                    className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center cursor-pointer"
                     onClick={(e) => handlePlayClick(e, video)}
                   >
                     <motion.div
                       whileHover={{ scale: 1.2 }}
                       whileTap={{ scale: 0.9 }}
-                      className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center"
+                      className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-lg shadow-red-600/50"
                     >
                       <PlayIcon className="w-8 h-8 text-white" />
                     </motion.div>
@@ -554,14 +571,14 @@ function Home() {
 
                   {/* Duration badge */}
                   {video.duration && video.duration !== "00:00" && (
-                    <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/70 rounded text-xs text-white flex items-center gap-1">
+                    <div className="absolute bottom-2 right-2 px-2 py-1 bg-red-600/90 rounded text-xs text-white flex items-center gap-1 backdrop-blur-sm">
                       <ClockIcon className="w-3 h-3" />
                       {video.duration}
                     </div>
                   )}
 
                   {/* Category badge */}
-                  <div className="absolute top-2 left-2 px-2 py-1 bg-red-600/90 rounded text-xs text-white">
+                  <div className="absolute top-2 left-2 px-2 py-1 bg-red-600 rounded text-xs text-white font-medium shadow-lg">
                     {video.category}
                   </div>
                 </div>
@@ -577,25 +594,25 @@ function Home() {
                   </p>
 
                   {/* Meta info */}
-                  <div className="flex items-center justify-between text-xs text-gray-500">
+                  <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-3">
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1 text-gray-400">
                         <EyeIcon className="w-3 h-3" />
                         {formatNumber(video.views)}
                       </span>
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1 text-gray-400">
                         <ChatIcon className="w-3 h-3" />
                         {video.comments}
                       </span>
                     </div>
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1 text-gray-400">
                       <CalendarIcon className="w-3 h-3" />
                       {video.date}
                     </span>
                   </div>
 
                   {/* Action buttons */}
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-700">
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-red-500/20">
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
@@ -650,7 +667,7 @@ function Home() {
           variants={itemVariants}
           className="text-3xl font-bold text-white mb-8 flex items-center gap-3"
         >
-          <SparklesIcon className="w-8 h-8 text-red-300" />
+          <SparklesIcon className="w-8 h-8 text-red-500" />
           Our Channels
         </motion.h2>
 
@@ -678,7 +695,7 @@ function Home() {
           variants={itemVariants}
           className="text-3xl font-bold text-white mb-8 flex items-center gap-3"
         >
-          <SparklesIcon className="w-8 h-8 text-red-300" />
+          <SparklesIcon className="w-8 h-8 text-red-500" />
           Connect With Us
         </motion.h2>
 
@@ -688,7 +705,7 @@ function Home() {
           transition={{ delay: 0.8 }}
           className="relative"
         >
-          <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-2xl p-8 shadow-2xl">
+          <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-2xl p-8 shadow-2xl">
             <div className="flex flex-col md:flex-row items-center justify-between gap-8">
               <div className="w-full md:w-1/2 flex justify-center">
                 <motion.div

@@ -9,6 +9,7 @@ import UploadPodcast from "./pages/UploadPodcast";
 import AdminLogin from "./pages/AdminLogin";
 import AdminCategories from "./pages/AdminCategories";
 import AdminVideos from "./pages/AdminVideos";
+import AdminEditVideo from "./pages/AdminEditVideo";
 
 
 function App(){
@@ -26,7 +27,8 @@ return(
 <Route path="/admin" element={<AdminDashboard/>}/>
 <Route path="/admin/upload" element={<UploadPodcast/>}/>
 <Route path="/admin/categories" element={<AdminCategories />} />
-<Route path="/admin/videos" element={<AdminVideos />} />
+<Route path="/admin/videos" element={<AdminVideos/>} />
+<Route path="/admin/edit/:id" element={<AdminEditVideo/>} />
 
 </Routes>
 

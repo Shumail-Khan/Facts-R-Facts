@@ -19,7 +19,9 @@ exports.uploadVideo = async (req, res) => {
         {
           resource_type: "video",
           folder: "podcasts",
-          format: "mp4", // ensure it's treated as video
+          eager: [{ format: "mp4" }],
+          eager_async: true
+          
         },
         (error, result) => {
           if (result) resolve(result);
@@ -94,5 +96,75 @@ exports.getVideoById = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch video" });
+  }
+};
+
+
+exports.incrementViews = async (req, res) => {
+  try {
+
+    const video = await Video.findByIdAndUpdate(
+      req.params.id,
+      { $inc: { views: 1 } },   // increase views by 1
+      { new: true }
+    );
+
+    if (!video) {
+      return res.status(404).json({ message: "Video not found" });
+    }
+
+    res.status(200).json({
+      message: "View updated",
+      views: video.views
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to update views" });
+  }
+};
+
+exports.deleteVideo = async (req, res) => {
+  try {
+
+    const video = await Video.findByIdAndDelete(req.params.id);
+
+    if (!video) {
+      return res.status(404).json({ message: "Video not found" });
+    }
+
+    res.json({
+      message: "Video deleted successfully"
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Delete failed" });
+  }
+};
+
+
+exports.updateVideo = async (req, res) => {
+  try {
+
+    const updatedVideo = await Video.findByIdAndUpdate(
+      req.params.id,
+      {
+        title: req.body.title,
+        description: req.body.description,
+        category: req.body.category
+      },
+      { new: true }
+    );
+
+    if (!updatedVideo) {
+      return res.status(404).json({ message: "Video not found" });
+    }
+
+    res.json(updatedVideo);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Update failed" });
   }
 };

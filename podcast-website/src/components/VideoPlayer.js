@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import API from "../services/api"; // Make sure to import your API
 import {
   PlayIcon,
   PauseIcon,
@@ -23,16 +24,33 @@ const VideoPlayer = ({ video, onClose }) => {
   const [isLoading, setIsLoading] = useState(true);
   const controlsTimeout = useRef(null);
 
+  // Add view tracking function with session storage to prevent multiple counts
+  const addView = async () => {
+    // Check if view already counted in this session
+    if (!sessionStorage.getItem(`viewed_${video._id}`)) {
+      try {
+        await API.post(`/videos/${video._id}/view`);
+        // Mark as viewed in session storage
+        sessionStorage.setItem(`viewed_${video._id}`, 'true');
+        console.log('View tracked for video:', video._id);
+      } catch (error) {
+        console.error("View update failed", error);
+      }
+    } else {
+      console.log('View already counted in this session');
+    }
+  };
+
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.addEventListener("loadedmetadata", () => {
         setDuration(videoRef.current.duration);
         setIsLoading(false);
       });
-      
+
       videoRef.current.addEventListener("waiting", () => setIsLoading(true));
       videoRef.current.addEventListener("playing", () => setIsLoading(false));
-      
+
       // Auto-play when video is selected
       videoRef.current.play().catch(e => {
         console.log("Autoplay prevented:", e);
@@ -161,6 +179,7 @@ const VideoPlayer = ({ video, onClose }) => {
         <video
           ref={videoRef}
           src={video.videoUrl}
+          onPlay={addView} // This triggers when video starts playing
           className="absolute top-0 left-0 w-full h-full"
           onClick={togglePlay}
           onTimeUpdate={handleTimeUpdate}
@@ -203,9 +222,9 @@ const VideoPlayer = ({ video, onClose }) => {
         {/* Center Play/Pause Button */}
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ 
-            opacity: showControls ? 1 : 0, 
-            scale: showControls ? 1 : 0.5 
+          animate={{
+            opacity: showControls ? 1 : 0,
+            scale: showControls ? 1 : 0.5
           }}
           className="absolute inset-0 flex items-center justify-center"
         >
