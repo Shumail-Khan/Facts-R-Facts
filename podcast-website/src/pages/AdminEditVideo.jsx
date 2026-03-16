@@ -89,7 +89,7 @@ function AdminEditVideo() {
       });
       
       alert('Video updated successfully!');
-      navigate('/admin/dashboard');
+      navigate('/admin');
     } catch (err) {
       console.error('Error updating video:', err);
       alert(err.response?.data?.message || 'Failed to update video. Please try again.');
@@ -99,7 +99,7 @@ function AdminEditVideo() {
   };
 
   const handleCancel = () => {
-    navigate('/admin/dashboard');
+    navigate('/admin');
   };
 
   if (loading) {
@@ -119,7 +119,7 @@ function AdminEditVideo() {
         <div className="text-center">
           <p className="text-red-500 mb-4">{error}</p>
           <button
-            onClick={() => navigate('/admin/dashboard')}
+            onClick={() => navigate('/admin')}
             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
           >
             Back to Dashboard
