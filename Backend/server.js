@@ -20,7 +20,9 @@ app.use(cors({
 }));
 app.use(express.json());
 
-
+app.get("/", (req, res) => {
+  res.send("Welcome to the Facts-R-Facts Backend API!");
+});
 
 // Routes
 app.use("/api/admin", adminRoutes);
