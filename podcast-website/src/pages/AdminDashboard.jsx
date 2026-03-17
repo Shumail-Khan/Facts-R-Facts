@@ -17,6 +17,7 @@ import {
   BarChart,
   Bar
 } from "recharts";
+import API from "../services/api";
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -91,7 +92,8 @@ function AdminDashboard() {
   const fetchVideos = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/videos");
+      const res = await API.get("/videos");
+      console.log("res:", res);
       
       // Get all videos with Cloudinary URLs
       const videos = res.data.map((video) => ({
@@ -183,9 +185,9 @@ function AdminDashboard() {
 
   const fetchComments = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/comments");
+      const response = await API.get("/videos/comments/all");
       const commentsData = response.data;
-      
+
       // Group comments by video
       const commentsByVideo = {};
       commentsData.forEach(comment => {
@@ -223,10 +225,9 @@ function AdminDashboard() {
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .slice(0, 5)
         .map(comment => {
-          const video = videos.find(v => v.id === comment.videoId);
           return {
             ...comment,
-            videoTitle: video?.title || 'Unknown Video'
+            videoTitle: comment.videoId?.title || 'Unknown Video'
           };
         });
       
@@ -244,7 +245,7 @@ function AdminDashboard() {
 
   const fetchLikeStats = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/videos/likes/stats");
+      const response = await API.get("/videos/likes/stats");
       const likeData = response.data;
       
       setLikeStats({
@@ -470,7 +471,7 @@ function AdminDashboard() {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this video?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/videos/${id}`, {
+        await API.delete(`/videos/${id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("adminToken")}`
           }

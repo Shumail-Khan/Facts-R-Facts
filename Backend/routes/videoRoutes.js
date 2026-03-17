@@ -32,4 +32,7 @@ router.post("/:id/view", videoController.incrementViews);
 router.delete("/:id",  videoController.deleteVideo);
 router.put("/:id",  videoController.updateVideo);
 
+router.get("/comments/all", commentController.getAllComments);
+router.delete("/comments/:id", commentController.deleteComment);
+
 module.exports = router;

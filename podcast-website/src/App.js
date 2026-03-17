@@ -10,6 +10,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminCategories from "./pages/AdminCategories";
 import AdminVideos from "./pages/AdminVideos";
 import AdminEditVideo from "./pages/AdminEditVideo";
+import AdminComments from "./pages/AdminComments";
 
 
 function App(){
@@ -29,6 +30,7 @@ return(
 <Route path="/admin/categories" element={<AdminCategories />} />
 <Route path="/admin/videos" element={<AdminVideos/>} />
 <Route path="/admin/edit/:id" element={<AdminEditVideo/>} />
+<Route path="/admin/comments" element={<AdminComments />} />
 
 </Routes>
 
