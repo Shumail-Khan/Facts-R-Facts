@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import API from "../services/api";
 import Navbar from "../components/Navbar";
 import VideoPlayer from "../components/VideoPlayer";
+import ShareModal from "../components/ShareModal";
+import CommentsModal from "../components/CommentsModal";
 
 import {
   MusicNoteIcon,
@@ -33,6 +35,13 @@ function CategoryVideos() {
   const [searchQuery, setSearchQuery] = useState("");
   const [likedVideos, setLikedVideos] = useState({});
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareVideo, setShareVideo] = useState(null);
+
+  const [comments, setComments] = useState({});
+  const [showComments, setShowComments] = useState(false);
+  const [currentCommentVideo, setCurrentCommentVideo] = useState(null);
+  const [newComment, setNewComment] = useState("");
 
   // Fetch category + videos from API
   useEffect(() => {
@@ -107,11 +116,111 @@ function CategoryVideos() {
     document.body.style.overflow = "unset";
   };
 
-  const handleLike = (videoId) => {
+  const handleLike = async (e, videoId) => {
+    e.stopPropagation();
+
+    const isLiked = likedVideos[videoId];
+    const newLikedState = !isLiked;
+
+    // optimistic update
     setLikedVideos(prev => ({
       ...prev,
-      [videoId]: !prev[videoId]
+      [videoId]: newLikedState
     }));
+
+    setFilteredVideos(prev =>
+      prev.map(video =>
+        video._id === videoId
+          ? { ...video, likes: video.likes + (newLikedState ? 1 : -1) }
+          : video
+      )
+    );
+
+    try {
+      await API.post(`/videos/${videoId}/like`);
+    } catch (err) {
+      console.error("Like error:", err);
+
+      // rollback
+      setLikedVideos(prev => ({
+        ...prev,
+        [videoId]: isLiked
+      }));
+
+      setFilteredVideos(prev =>
+        prev.map(video =>
+          video._id === videoId
+            ? { ...video, likes: video.likes + (isLiked ? 1 : -1) }
+            : video
+        )
+      );
+    }
+  };
+
+  const handleShare = (e, video) => {
+    e.stopPropagation();
+
+    setShareVideo({
+      ...video,
+      thumbnail: video.thumbnailUrl
+    });
+
+    setShowShareModal(true);
+  };
+
+  const handleShowComments = (e, video) => {
+    e.stopPropagation();
+    setCurrentCommentVideo(video);
+    setShowComments(true);
+    if (!comments[video._id]) {
+      fetchComments(video._id);
+    }
+  };
+
+  const fetchComments = async (videoId) => {
+    try {
+      const res = await API.get(`/videos/${videoId}/comments`);
+      setComments(prev => ({
+        ...prev,
+        [videoId]: res.data
+      }));
+    } catch (err) {
+      console.error("Fetch comments error:", err);
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !currentCommentVideo) return;
+
+    try {
+      const res = await API.post(
+        `/videos/${currentCommentVideo._id}/comments`,
+        {
+          text: newComment,
+          user: "Anonymous"
+        }
+      );
+
+      setComments(prev => ({
+        ...prev,
+        [currentCommentVideo._id]: [
+          ...(prev[currentCommentVideo._id] || []),
+          res.data
+        ]
+      }));
+
+      setFilteredVideos(prev =>
+        prev.map(video =>
+          video._id === currentCommentVideo._id
+            ? { ...video, comments: (video.comments || 0) + 1 }
+            : video
+        )
+      );
+
+      setNewComment("");
+    } catch (err) {
+      console.error("Add comment error:", err);
+    }
   };
 
   const formatNumber = (num) => {
@@ -122,6 +231,8 @@ function CategoryVideos() {
 
   const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } } };
   const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100 } } };
+
+  // console.log("Current Category:", filteredVideos);
 
   if (loading) {
     return (
@@ -171,6 +282,23 @@ function CategoryVideos() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ✅ CORRECT: Separate modals */}
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        video={shareVideo}
+      />
+
+      <CommentsModal
+        isOpen={showComments}
+        onClose={() => setShowComments(false)}
+        video={currentCommentVideo}
+        comments={comments[currentCommentVideo?._id] || []}
+        onAddComment={handleAddComment}
+        newComment={newComment}
+        setNewComment={setNewComment}
+      />
 
       {/* Category Header */}
       <motion.div initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="relative px-4 pt-20 pb-12 mx-auto max-w-7xl">
@@ -353,16 +481,39 @@ function CategoryVideos() {
                         <span className="flex items-center gap-1"><CalendarIcon className="w-3 h-3" />{new Date(video.date).toLocaleDateString()}</span>
                       </div>
                       <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
-                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => handleLike(video._id)} className="flex items-center gap-1 text-gray-400 hover:text-red-500 transition-colors">
-                          {likedVideos[video._id] ? <HeartIconSolid className="w-4 h-4 text-red-500" /> : <HeartIcon className="w-4 h-4" />}
+
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={(e) => handleLike(e, video._id)}
+                          className="flex items-center gap-1 text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                          {likedVideos[video._id] ? (
+                            <HeartIconSolid className="w-4 h-4 text-red-500" />
+                          ) : (
+                            <HeartIcon className="w-4 h-4" />
+                          )}
                           <span className="text-xs">{formatNumber(video.likes)}</span>
                         </motion.button>
-                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="text-gray-400 hover:text-blue-500 transition-colors">
+
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={(e) => handleShare(e, video)}
+                          className="text-gray-400 hover:text-blue-500 transition-colors"
+                        >
                           <ShareIcon className="w-4 h-4" />
                         </motion.button>
-                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="text-gray-400 hover:text-green-500 transition-colors">
+
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={(e) => handleShowComments(e, video)}
+                          className="text-gray-400 hover:text-green-500 transition-colors"
+                        >
                           <ChatIcon className="w-4 h-4" />
                         </motion.button>
+
                       </div>
                     </div>
                   </div>
