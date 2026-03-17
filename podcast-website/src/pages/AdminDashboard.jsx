@@ -93,7 +93,6 @@ function AdminDashboard() {
     try {
       setLoading(true);
       const res = await API.get("/videos");
-      console.log("res:", res);
       
       // Get all videos with Cloudinary URLs
       const videos = res.data.map((video) => ({
