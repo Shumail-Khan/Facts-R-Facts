@@ -26,18 +26,21 @@ const VideoPlayer = ({ video, onClose }) => {
 
   // Add view tracking function with session storage to prevent multiple counts
   const addView = async () => {
-    // Check if view already counted in this session
-    if (!sessionStorage.getItem(`viewed_${video._id}`)) {
+    const videoId = video?._id || video?.id;
+
+    if (!videoId) {
+      console.warn("No video ID available for view tracking");
+      return;
+    }
+
+    if (!sessionStorage.getItem(`viewed_${videoId}`)) {
       try {
-        await API.post(`/videos/${video._id}/view`);
-        // Mark as viewed in session storage
-        sessionStorage.setItem(`viewed_${video._id}`, 'true');
-        console.log('View tracked for video:', video._id);
+        await API.post(`/videos/${videoId}/view`);
+        sessionStorage.setItem(`viewed_${videoId}`, "true");
+        console.log("View tracked for video:", videoId);
       } catch (error) {
         console.error("View update failed", error);
       }
-    } else {
-      console.log('View already counted in this session');
     }
   };
 
@@ -141,25 +144,49 @@ const VideoPlayer = ({ video, onClose }) => {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === " " || e.key === "Spacebar" || e.key === "Space") {
-      e.preventDefault();
-      togglePlay();
-    } else if (e.key === "Escape") {
-      onClose();
-    } else if (e.key === "f" || e.key === "F") {
-      toggleFullscreen();
-    } else if (e.key === "m" || e.key === "M") {
-      toggleMute();
-    }
-  };
+  useEffect(() => {
+    if (!video) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose(); // closes the player
+      } else if (e.code === "Space") {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.key.toLowerCase() === "f") {
+        toggleFullscreen();
+      } else if (e.key.toLowerCase() === "m") {
+        toggleMute();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, isPlaying, isMuted, video]);
 
   useEffect(() => {
-    window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [isPlaying, isMuted]);
+    if (!videoRef.current || !video) return;
+
+    const videoEl = videoRef.current;
+
+    const onLoaded = () => {
+      setDuration(videoEl.duration);
+      setIsLoading(false);
+    };
+
+    videoEl.addEventListener("loadedmetadata", onLoaded);
+    videoEl.addEventListener("waiting", () => setIsLoading(true));
+    videoEl.addEventListener("playing", () => setIsLoading(false));
+
+    videoEl.play().catch(() => setIsPlaying(false));
+
+    return () => {
+      videoEl.removeEventListener("loadedmetadata", onLoaded);
+    };
+  }, [video]);
 
   const handleCloseClick = (e) => {
+    e.preventDefault();
     e.stopPropagation();
     onClose();
   };
@@ -176,16 +203,17 @@ const VideoPlayer = ({ video, onClose }) => {
     >
       <div className="relative" style={{ paddingTop: "56.25%" }}>
         {/* Video Element */}
-        <video
-          ref={videoRef}
-          src={video.videoUrl}
-          onPlay={addView} // This triggers when video starts playing
-          className="absolute top-0 left-0 w-full h-full"
-          onClick={togglePlay}
-          onTimeUpdate={handleTimeUpdate}
-          onEnded={() => setIsPlaying(false)}
-          playsInline
-        />
+        {video?.videoUrl && (
+          <video
+            ref={videoRef}
+            src={video.videoUrl}
+            onPlay={addView} // This triggers when video starts playing
+            className="absolute top-0 left-0 w-full h-full"
+            onClick={togglePlay}
+            onTimeUpdate={handleTimeUpdate}
+            onEnded={() => setIsPlaying(false)}
+            playsInline
+          />)}
 
         {/* Loading Spinner */}
         {isLoading && (
@@ -214,7 +242,7 @@ const VideoPlayer = ({ video, onClose }) => {
               className="text-white hover:text-red-500 transition-colors ml-4 p-2 hover:bg-white/10 rounded-full"
               title="Close (ESC)"
             >
-              <XIcon className="w-5 h-5" />
+              <XIcon className="w-5 h-5 relative z-50" />
             </button>
           </div>
         </motion.div>
