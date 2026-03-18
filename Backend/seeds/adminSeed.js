@@ -1,35 +1,37 @@
-const path = require("path");
-require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
-const connectDB = require("../config/db");
-
-// Connect to MongoDB
-connectDB();
 
 const seedAdmin = async () => {
   try {
-    const adminExists = await User.findOne({ email: "admin@podcast.com" });
-    if (adminExists) {
-      console.log("⚠️ Admin already exists");
-      process.exit();
+    const email = process.env.ADMIN_EMAIL;
+    const password = process.env.ADMIN_PASSWORD;
+    const name = process.env.ADMIN_NAME || "Admin";
+
+    if (!email || !password) {
+      console.log("❌ Admin env variables missing");
+      return;
     }
 
-    const hashedPassword = await bcrypt.hash("admin123", 10);
+    const adminExists = await User.findOne({ email });
+
+    if (adminExists) {
+      console.log("⚠️ Admin already exists");
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const admin = await User.create({
-      name: "Super Admin",
-      email: "admin@podcast.com",
+      name,
+      email,
       password: hashedPassword,
       role: "admin",
     });
 
-    console.log("✅ Admin created:", admin);
-    process.exit();
+    console.log("✅ Admin created");
   } catch (err) {
-    console.error("❌ Error creating admin:", err);
-    process.exit(1);
+    console.error("❌ Error creating admin:", err.message);
   }
 };
 
-seedAdmin();
+module.exports = seedAdmin;
