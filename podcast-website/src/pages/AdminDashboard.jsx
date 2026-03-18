@@ -17,6 +17,17 @@ import {
   Bar
 } from "recharts";
 import API from "../services/api";
+import ChangePasswordModal from "../components/ChangePasswordModal";
+import { 
+  Lock, 
+  User, 
+  LogOut, 
+  Settings,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  AlertCircle 
+} from "lucide-react";
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -67,11 +78,14 @@ function AdminDashboard() {
     mostLikedVideo: null,
     likeTrend: []
   });
+  
+  // Change Password Modal State
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   useEffect(() => {
     fetchVideos();
     fetchComments();
-    fetchLikeStats();
+    // fetchLikeStats();
     
     // Add ESC key listener
     const handleEscKey = (event) => {
@@ -241,23 +255,6 @@ function AdminDashboard() {
     }
   };
 
-  const fetchLikeStats = async () => {
-    try {
-      const response = await API.get("/videos/likes/stats");
-      const likeData = response.data;
-      
-      setLikeStats({
-        totalLikes: likeData.totalLikes || 0,
-        avgLikesPerVideo: likeData.avgLikesPerVideo || 0,
-        mostLikedVideo: likeData.mostLikedVideo || null,
-        likeTrend: likeData.trend || []
-      });
-      
-    } catch (error) {
-      console.error("Error fetching like stats:", error);
-    }
-  };
-
   const generateViewsData = (videos, range) => {
     const days = range === 'week' ? 7 : range === 'month' ? 30 : 365;
     const data = [];
@@ -284,8 +281,6 @@ function AdminDashboard() {
         comments: Math.floor(dayViews * 0.1) // Example calculation
       });
     }
-    
-    setViewsData(data);
   };
 
   // Modal Video Functions
@@ -440,16 +435,6 @@ function AdminDashboard() {
     { name: "Naama", videos: 0, views: 0, likes: 0, comments: 0, color: "#3b82f6" }
   ]);
 
-  const [viewsData, setViewsData] = useState([
-    { name: "Mon", views: 0, likes: 0, comments: 0 },
-    { name: "Tue", views: 0, likes: 0, comments: 0 },
-    { name: "Wed", views: 0, likes: 0, comments: 0 },
-    { name: "Thu", views: 0, likes: 0, comments: 0 },
-    { name: "Fri", views: 0, likes: 0, comments: 0 },
-    { name: "Sat", views: 0, likes: 0, comments: 0 },
-    { name: "Sun", views: 0, likes: 0, comments: 0 }
-  ]);
-
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
     navigate("/admin/login");
@@ -476,7 +461,7 @@ function AdminDashboard() {
         });
         fetchVideos();
         fetchComments();
-        fetchLikeStats();
+        // fetchLikeStats();
       } catch (error) {
         console.error("Error deleting video:", error);
         alert("Failed to delete video");
@@ -620,8 +605,6 @@ function AdminDashboard() {
     </svg>
   );
 
-
-
   const SearchIcon = () => (
     <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -669,7 +652,7 @@ function AdminDashboard() {
                   <span className="text-white font-bold text-xl">ANP</span>
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-800">AWAMI NATIONAL PARTY</h1>
+                  <h1 className="text-xl font-bold text-gray-800">FACTS ARE FACTS</h1>
                   <p className="text-xs text-gray-500">Admin Dashboard</p>
                 </div>
               </div>
@@ -681,7 +664,7 @@ function AdminDashboard() {
                 value={timeRange}
                 onChange={(e) => {
                   setTimeRange(e.target.value);
-                  generateViewsData(recentUploads, e.target.value);
+                  // generateViewsData(recentUploads, e.target.value);
                 }}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
               >
@@ -696,7 +679,7 @@ function AdminDashboard() {
                 onClick={() => {
                   fetchVideos();
                   fetchComments();
-                  fetchLikeStats();
+                  // fetchLikeStats();
                 }}
                 className="p-2 hover:bg-gray-100 rounded-lg text-gray-600"
                 title="Refresh data"
@@ -715,8 +698,6 @@ function AdminDashboard() {
                 </div>
               </div>
 
-              
-
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white font-bold">
                   A
@@ -725,16 +706,29 @@ function AdminDashboard() {
                   <p className="text-sm font-semibold text-gray-700">Admin User</p>
                   <p className="text-xs text-gray-500">admin@anp.org</p>
                 </div>
+                
+                {/* Change Password Button */}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setIsChangePasswordOpen(true)}
+                  className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
+                  title="Change Password"
+                >
+                  <Lock size={18} />
+                </motion.button>
+                
+                {/* Logout Button */}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleLogout}
+                  className="p-2 hover:bg-red-50 rounded-lg text-red-600 transition-colors"
+                  title="Logout"
+                >
+                  <LogoutIcon />
+                </motion.button>
               </div>
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleLogout}
-                className="p-2 hover:bg-red-50 rounded-lg text-red-600 transition-colors"
-              >
-                <LogoutIcon />
-              </motion.button>
             </div>
           </div>
         </div>
@@ -753,10 +747,10 @@ function AdminDashboard() {
               <h2 className="text-2xl font-bold mb-2">Welcome back, Admin!</h2>
               <p className="text-red-100">You have {stats.totalVideos} total videos with {formatNumber(stats.totalViews)} views, {formatNumber(stats.totalLikes)} likes, and {formatNumber(stats.totalComments)} comments</p>
               <div className="flex items-center gap-4 mt-4">
-                <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
+                {/* <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
                   <TrendingUpIcon />
                   <span className="text-sm">Engagement Rate: {stats.engagementRate}%</span>
-                </div>
+                </div> */}
               </div>
             </div>
             <div className="hidden md:block">
@@ -775,7 +769,7 @@ function AdminDashboard() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8"
         >
           <motion.div variants={itemVariants} className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-red-600">
             <div className="flex items-center justify-between">
@@ -896,64 +890,25 @@ function AdminDashboard() {
               <CogIcon />
             </div>
           </motion.div>
-        </motion.div>
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Settings Card */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-white p-6 rounded-xl shadow-lg"
+            whileHover={{ scale: 1.02, y: -5 }}
+            className="bg-white p-6 rounded-xl shadow-lg cursor-pointer hover:shadow-xl transition-all border border-gray-200"
+            onClick={() => setIsChangePasswordOpen(true)}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Engagement Overview</h3>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-1 border border-gray-300 rounded-lg text-sm"
-              >
-                <option value="all">All Categories</option>
-                {categoryStats.map(cat => (
-                  <option key={cat.name} value={cat.name}>{cat.name}</option>
-                ))}
-              </select>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-gray-600">
+                  <Lock size={24} />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-800 mt-3">Security</h3>
+                <p className="text-sm text-gray-500">Change password & settings</p>
+              </div>
+              <Settings size={20} className="text-gray-400" />
             </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={viewsData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="views" stroke="#ef4444" strokeWidth={2} name="Views" />
-                <Line type="monotone" dataKey="likes" stroke="#ec4899" strokeWidth={2} name="Likes" />
-                <Line type="monotone" dataKey="comments" stroke="#10b981" strokeWidth={2} name="Comments" />
-              </LineChart>
-            </ResponsiveContainer>
           </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-white p-6 rounded-xl shadow-lg"
-          >
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Category Performance</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={categoryStats.filter(cat => cat.videos > 0)}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="videos" fill="#ef4444" name="Videos" />
-                <Bar dataKey="likes" fill="#ec4899" name="Likes" />
-                <Bar dataKey="comments" fill="#10b981" name="Comments" />
-              </BarChart>
-            </ResponsiveContainer>
-          </motion.div>
-        </div>
+        </motion.div>
 
         {/* Recent Uploads and Comments Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1383,6 +1338,12 @@ function AdminDashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal 
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
     </div>
   );
 }

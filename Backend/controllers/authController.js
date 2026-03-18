@@ -20,7 +20,14 @@ exports.adminLogin = async (req, res) => {
     if(admin.role !== "admin") return res.status(403).json({ message: "Not authorized" });
 
     const token = generateToken(admin);
-    res.json({ token });
+    res.json({
+       token,
+       user: {
+         id: admin._id,
+         name: admin.name,
+         role: admin.role,
+       }
+      });
   } catch(err) {
     res.status(500).json({ message: err.message });
   }
@@ -38,6 +45,32 @@ exports.createAdmin = async (req, res) => {
     const admin = await User.create({ name, email, password: hashedPassword, role: "admin" });
     res.status(201).json({ message: "Admin created", admin });
   } catch(err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
+// Change Admin Password
+exports.changePassword = async (req, res) => {
+  try {
+    const user = req.user; // from protectAdmin middleware
+    const { currentPassword, newPassword } = req.body;
+
+    // Check current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({ message: "Password changed successfully" });
+
+  } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };

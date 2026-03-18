@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { adminLogin, createAdmin } = require("../controllers/authController");
+const { changePassword } = require("../controllers/authController");
 const { protectAdmin } = require("../middleware/auth");
 
 // Login
@@ -13,5 +14,6 @@ router.post("/create", protectAdmin, createAdmin);
 router.get("/dashboard", protectAdmin, (req, res) => {
   res.json({ message: `Welcome ${req.user.name} to admin dashboard` });
 });
+router.post("/change-password", protectAdmin, changePassword);
 
 module.exports = router;
