@@ -10,14 +10,12 @@ const seedAdmin = require("./seeds/adminSeed");
 const app = express();
 
 // Middleware
-// app.use(cors({
-//   origin: process.env.FRONTEND_URL,
-//   credentials: true,
-//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-//   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-// }));
-app.use(cors({ origin: true, credentials: true }));
-app.options("*", cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 
 app.use(express.json());
 

@@ -3,17 +3,15 @@ const router = express.Router();
 const { adminLogin, createAdmin } = require("../controllers/authController");
 const { changePassword } = require("../controllers/authController");
 const { protectAdmin } = require("../middleware/auth");
+const multer = require("multer");
+const upload = multer();
 
 // Login
-router.post("/login", adminLogin);
+router.post("/login", upload.none(), adminLogin);
 
 // Optional: Create admin from API
 router.post("/create", protectAdmin, createAdmin);
 
-// Example protected dashboard route
-router.get("/dashboard", protectAdmin, (req, res) => {
-  res.json({ message: `Welcome ${req.user.name} to admin dashboard` });
-});
 router.post("/change-password", protectAdmin, changePassword);
 
 module.exports = router;

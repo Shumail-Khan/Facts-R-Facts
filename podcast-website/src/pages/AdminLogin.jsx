@@ -14,21 +14,23 @@ const AdminLogin = () => {
     setError("");
 
     try {
-      const res = await API.post("/admin/login", {
-        email,
-        password,
+      const formData = new FormData();
+      formData.append("email", email);
+      formData.append("password", password);
+
+      const res = await API.post("/admin/login", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        withCredentials: true,
       });
 
       localStorage.setItem("adminToken", res.data.token);
       navigate("/admin");
     } catch (err) {
       console.error(err);
-      setError(
-        err.response?.data?.message || "Login failed. Please try again."
-      );
+      setError(err.response?.data?.message || "Login failed. Please try again.");
     }
   };
-
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400">
       <div className="bg-white/95 backdrop-blur-sm p-10 rounded-2xl shadow-2xl w-full max-w-md border border-white/20">
