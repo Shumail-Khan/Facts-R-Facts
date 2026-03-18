@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import API from "../services/api";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -13,7 +13,7 @@ const AdminLogin = () => {
     setError("");
 
     try {
-      const res = await axios.post("http://localhost:5000/api/admin/login", {
+      const res = await API.post("/admin/login", {
         email,
         password,
       });

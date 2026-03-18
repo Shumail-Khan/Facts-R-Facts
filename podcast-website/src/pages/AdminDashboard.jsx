@@ -1,7 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
 import {
   LineChart,
   Line,

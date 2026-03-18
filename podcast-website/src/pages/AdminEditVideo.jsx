@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import API from "../services/api";
 import { motion } from 'framer-motion';
 
 function AdminEditVideo() {
@@ -29,7 +29,7 @@ function AdminEditVideo() {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
       
-      const res = await axios.get(`http://localhost:5000/api/videos/${id}`, {
+      const res = await API.get(`/videos/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -55,7 +55,7 @@ function AdminEditVideo() {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/categories');
+      const res = await API.get('/categories');
       setCategories(res.data);
     } catch (err) {
       console.error('Error fetching categories:', err);
@@ -81,7 +81,7 @@ function AdminEditVideo() {
       setSubmitting(true);
       const token = localStorage.getItem('adminToken');
       
-      await axios.put(`http://localhost:5000/api/videos/${id}`, formData, {
+      await API.put(`/videos/${id}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'

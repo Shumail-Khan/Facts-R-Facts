@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import axios from "axios";
+import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -27,7 +27,7 @@ const AdminVideos = () => {
   const fetchVideos = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/videos");
+      const res = await API.get('/videos');
       setVideos(res.data);
     } catch (error) {
       console.error("Error fetching videos:", error);
@@ -47,7 +47,7 @@ const AdminVideos = () => {
 
     try {
       setDeleteLoading(videoToDelete);
-      await axios.delete(`http://localhost:5000/api/videos/${videoToDelete}`, {
+      await API.delete(`/videos/${videoToDelete}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
         },

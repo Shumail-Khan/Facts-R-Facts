@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import API from "../services/api";
 import { motion, AnimatePresence } from "framer-motion";
 
 function AdminCategories() {
@@ -18,7 +18,7 @@ function AdminCategories() {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/categories");
+      const res = await API.get("/categories");
       setCategories(res.data);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
@@ -56,10 +56,7 @@ function AdminCategories() {
       formData.append("description", description);
       formData.append("image", image);
 
-      await axios.post(
-        "http://localhost:5000/api/categories",
-        formData,
-        {
+      await API.post("/categories", formData, {
           headers: {
             "Content-Type": "multipart/form-data"
           }
@@ -87,7 +84,7 @@ const handleDelete = async () => {
 
   try {
     setDeleteLoading(categoryToDelete);
-    await axios.delete(`http://localhost:5000/api/categories/${categoryToDelete}`);
+    await API.delete(`/categories/${categoryToDelete}`);
     await fetchCategories();
     showSuccessMessage("Category deleted successfully!");
     setShowDeleteModal(false);

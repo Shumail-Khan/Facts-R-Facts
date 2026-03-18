@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import axios from "axios";
+import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -38,7 +38,7 @@ function UploadPodcast() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/categories");
+        const res = await API.get('/categories');
         setCategories(res.data);
       } catch (error) {
         console.error("Failed to fetch categories", error);
@@ -277,18 +277,15 @@ function UploadPodcast() {
       data.append("language", formData.language);
       data.append("featured", formData.featured);
 
-      const res = await axios.post(
-        "http://localhost:5000/api/videos/upload",
-        data,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
-          },
-          onUploadProgress: (progressEvent) => {
-            const percent = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
-            );
+      const res = await API.post('/videos/upload', data, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+        },
+        onUploadProgress: (progressEvent) => {
+          const percent = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
             setUploadProgress(percent);
 
             // Show complete message when 100%

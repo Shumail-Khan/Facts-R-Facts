@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MenuIcon, XIcon } from "@heroicons/react/outline";
-import axios from "axios";
+import API from "../services/api";
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,7 +11,7 @@ function Navbar() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/categories");
+        const res = await API.get("/categories");
         setCategories(res.data);
       } catch (err) {
         console.error("Failed to fetch categories:", err);
