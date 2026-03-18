@@ -648,9 +648,6 @@ function AdminDashboard() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">ANP</span>
-                </div>
                 <div>
                   <h1 className="text-xl font-bold text-gray-800">FACTS ARE FACTS</h1>
                   <p className="text-xs text-gray-500">Admin Dashboard</p>
