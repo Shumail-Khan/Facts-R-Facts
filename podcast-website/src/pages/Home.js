@@ -752,7 +752,7 @@ function Home() {
                 >
                   {/* Social media icons */}
                   <motion.a
-                    href="https://facebook.com"
+                    href="https://www.facebook.com/people/Facts-Are-Facts/61583739847757/"
                     target="_blank"
                     rel="noopener noreferrer"
                     whileHover={{ scale: 1.1, y: -5 }}

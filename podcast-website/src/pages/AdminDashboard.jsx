@@ -18,15 +18,15 @@ import {
 } from "recharts";
 import API from "../services/api";
 import ChangePasswordModal from "../components/ChangePasswordModal";
-import { 
-  Lock, 
-  User, 
-  LogOut, 
+import {
+  Lock,
+  User,
+  LogOut,
   Settings,
   Eye,
   EyeOff,
   CheckCircle,
-  AlertCircle 
+  AlertCircle
 } from "lucide-react";
 
 function AdminDashboard() {
@@ -34,7 +34,7 @@ function AdminDashboard() {
   const videoRefs = useRef({});
   const modalVideoRef = useRef(null);
   const modalRef = useRef(null);
-  
+
   const [stats, setStats] = useState({
     totalVideos: 0,
     totalViews: 0,
@@ -78,7 +78,7 @@ function AdminDashboard() {
     mostLikedVideo: null,
     likeTrend: []
   });
-  
+
   // Change Password Modal State
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
@@ -86,16 +86,16 @@ function AdminDashboard() {
     fetchVideos();
     fetchComments();
     // fetchLikeStats();
-    
+
     // Add ESC key listener
     const handleEscKey = (event) => {
       if (event.key === 'Escape' && isModalOpen) {
         closeVideoModal();
       }
     };
-    
+
     window.addEventListener('keydown', handleEscKey);
-    
+
     // Cleanup
     return () => {
       window.removeEventListener('keydown', handleEscKey);
@@ -106,7 +106,7 @@ function AdminDashboard() {
     try {
       setLoading(true);
       const res = await API.get("/videos");
-      
+
       // Get all videos with Cloudinary URLs
       const videos = res.data.map((video) => ({
         id: video._id,
@@ -133,8 +133,8 @@ function AdminDashboard() {
       const totalComments = videos.reduce((sum, video) => sum + video.comments, 0);
       const avgLikesPerVideo = videos.length > 0 ? (totalLikes / videos.length).toFixed(1) : 0;
       const avgCommentsPerVideo = videos.length > 0 ? (totalComments / videos.length).toFixed(1) : 0;
-      const engagementRate = videos.length > 0 
-        ? ((totalLikes + totalComments) / (totalViews || 1) * 100).toFixed(1) 
+      const engagementRate = videos.length > 0
+        ? ((totalLikes + totalComments) / (totalViews || 1) * 100).toFixed(1)
         : 0;
 
       setStats(prev => ({
@@ -153,7 +153,7 @@ function AdminDashboard() {
       const categoryViews = {};
       const categoryLikes = {};
       const categoryComments = {};
-      
+
       videos.forEach(video => {
         if (video.category) {
           categoryCounts[video.category] = (categoryCounts[video.category] || 0) + 1;
@@ -208,14 +208,14 @@ function AdminDashboard() {
         }
         commentsByVideo[comment.videoId].push(comment);
       });
-      
+
       setComments(commentsByVideo);
-      
+
       // Calculate comment stats
       const totalComments = commentsData.length;
       const videos = recentUploads.length > 0 ? recentUploads : [];
       const avgCommentsPerVideo = videos.length > 0 ? (totalComments / videos.length).toFixed(1) : 0;
-      
+
       // Find most commented video
       let mostCommented = null;
       let maxComments = 0;
@@ -231,7 +231,7 @@ function AdminDashboard() {
           }
         }
       });
-      
+
       // Get recent comments
       const recentComments = commentsData
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -242,14 +242,14 @@ function AdminDashboard() {
             videoTitle: comment.videoId?.title || 'Unknown Video'
           };
         });
-      
+
       setCommentStats({
         totalComments,
         avgCommentsPerVideo,
         mostCommentedVideo: mostCommented,
         recentComments
       });
-      
+
     } catch (error) {
       console.error("Error fetching comments:", error);
     }
@@ -259,12 +259,12 @@ function AdminDashboard() {
     const days = range === 'week' ? 7 : range === 'month' ? 30 : 365;
     const data = [];
     const today = new Date();
-    
+
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       const dateStr = date.toLocaleDateString('en-US', { weekday: 'short' });
-      
+
       // Calculate views for this day
       const dayViews = videos.reduce((sum, video) => {
         const videoDate = new Date(video.createdAt);
@@ -273,7 +273,7 @@ function AdminDashboard() {
         }
         return sum;
       }, 0);
-      
+
       data.push({
         name: dateStr,
         views: dayViews,
@@ -291,10 +291,10 @@ function AdminDashboard() {
     setCurrentTime(0);
     setDuration(0);
     setVideoError(false);
-    
+
     // Prevent body scrolling when modal is open
     document.body.style.overflow = 'hidden';
-    
+
     // Reset video source to ensure fresh load
     setTimeout(() => {
       if (modalVideoRef.current) {
@@ -314,7 +314,7 @@ function AdminDashboard() {
     setCurrentTime(0);
     setDuration(0);
     setVideoError(false);
-    
+
     // Restore body scrolling
     document.body.style.overflow = 'unset';
   };
@@ -647,7 +647,17 @@ function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3">
+                <div className="h-11 w-11 md:h-12 md:w-12 overflow-hidden rounded-2xl shadow-lg ring-1 ring-red-100 bg-white/80 backdrop-blur-sm flex-shrink-0">
+                  <img
+                    src="/Logo.jpeg"
+                    alt="FACTS ARE FACTS"
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = "https://via.placeholder.com/320x320?text=Facts+Are+Facts";
+                    }}
+                  />
+                </div>
                 <div>
                   <h1 className="text-xl font-bold text-gray-800">FACTS ARE FACTS</h1>
                   <p className="text-xs text-gray-500">Admin Dashboard</p>
@@ -703,7 +713,7 @@ function AdminDashboard() {
                   <p className="text-sm font-semibold text-gray-700">Admin User</p>
                   <p className="text-xs text-gray-500">admin@anp.org</p>
                 </div>
-                
+
                 {/* Change Password Button */}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -714,7 +724,7 @@ function AdminDashboard() {
                 >
                   <Lock size={18} />
                 </motion.button>
-                
+
                 {/* Logout Button */}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -751,9 +761,9 @@ function AdminDashboard() {
               </div>
             </div>
             <div className="hidden md:block">
-              <img 
-                src="https://images.unsplash.com/photo-1557804506-669a67965ba0?w=200&auto=format" 
-                alt="Dashboard" 
+              <img
+                src="https://images.unsplash.com/photo-1557804506-669a67965ba0?w=200&auto=format"
+                alt="Dashboard"
                 className="w-32 h-32 object-cover rounded-lg opacity-20"
                 onError={(e) => e.target.style.display = 'none'}
               />
@@ -917,7 +927,7 @@ function AdminDashboard() {
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-800">Recent Uploads</h3>
-              <button 
+              <button
                 onClick={fetchVideos}
                 className="text-sm text-red-600 hover:text-red-700 font-medium flex items-center"
               >
@@ -962,9 +972,9 @@ function AdminDashboard() {
                       onClick={() => openVideoModal(upload)}
                     >
                       <div className="relative w-full sm:w-40 h-24 bg-gray-900 rounded-lg overflow-hidden group">
-                        <img 
-                          src={upload.thumbnail} 
-                          alt={upload.title} 
+                        <img
+                          src={upload.thumbnail}
+                          alt={upload.title}
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             e.target.src = "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=200&auto=format";
@@ -1004,28 +1014,28 @@ function AdminDashboard() {
                       </div>
 
                       <div className="flex space-x-1 ml-auto" onClick={(e) => e.stopPropagation()}>
-                        <button 
+                        <button
                           onClick={() => openVideoModal(upload)}
                           className="p-2 hover:bg-blue-100 rounded-lg text-blue-600 transition-colors"
                           title="Play video"
                         >
                           <PlayIcon />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleViewComments(upload)}
                           className="p-2 hover:bg-green-100 rounded-lg text-green-600 transition-colors"
                           title="View comments"
                         >
                           <ChatIcon />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleEdit(upload.id)}
                           className="p-2 hover:bg-blue-100 rounded-lg text-blue-600 transition-colors"
                           title="Edit video"
                         >
                           <PencilIcon />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDelete(upload.id)}
                           className="p-2 hover:bg-red-100 rounded-lg text-red-600 transition-colors"
                           title="Delete video"
@@ -1337,7 +1347,7 @@ function AdminDashboard() {
       </AnimatePresence>
 
       {/* Change Password Modal */}
-      <ChangePasswordModal 
+      <ChangePasswordModal
         isOpen={isChangePasswordOpen}
         onClose={() => setIsChangePasswordOpen(false)}
       />

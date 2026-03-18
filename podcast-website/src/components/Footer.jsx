@@ -32,32 +32,29 @@ const Footer = () => {
             <h3 className="text-white font-medium mb-2 text-sm border-b border-red-800 pb-1">Categories</h3>
             <ul className="space-y-1.5">
               <li>
-                <Link 
-                  to="/category/the-red-mic" 
+                <span
                   className="text-xs text-gray-300 hover:text-red-400 transition-colors flex items-center gap-1.5"
                 >
                   <Radio size={12} />
                   The Red Mic
-                </Link>
+                </span>
               </li>
               <li>
-                <Link 
-                  to="/category/pukhtun-chronicles" 
+                <span 
                   className="text-xs text-gray-300 hover:text-red-400 transition-colors flex items-center gap-1.5"
                 >
                   <Headphones size={12} />
                   PUKHTUN CHRONICLES
-                </Link>
+                </span>
               </li>
               <li>
-                <Link 
-                  to="/category/rshtya-rshtya-wy" 
+                <span 
                   className="text-xs text-gray-300 hover:text-red-400 transition-colors flex items-center gap-1.5"
                 >
                   <Mic size={12} />
                   رشتیا رشتیا وی
     
-                </Link>
+                </span>
               </li>
             </ul>
           </div>
@@ -87,15 +84,15 @@ const Footer = () => {
 
             {/* Legal Links - Compact */}
             <div className="flex gap-4">
-              <Link to="/privacy" className="text-gray-400 hover:text-red-400 transition-colors text-xs">
+              <span className="text-gray-400 hover:text-red-400 transition-colors text-xs">
                 Privacy
-              </Link>
-              <Link to="/terms" className="text-gray-400 hover:text-red-400 transition-colors text-xs">
+              </span>
+              <span className="text-gray-400 hover:text-red-400 transition-colors text-xs">
                 Terms
-              </Link>
-              <Link to="/cookies" className="text-gray-400 hover:text-red-400 transition-colors text-xs">
+              </span>
+              <span className="text-gray-400 hover:text-red-400 transition-colors text-xs">
                 Cookies
-              </Link>
+              </span>
             </div>
           </div>
 
