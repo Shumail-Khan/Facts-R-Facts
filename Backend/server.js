@@ -5,6 +5,7 @@ const connectDB = require("./config/db");
 const adminRoutes = require("./routes/adminRoutes");
 const videoRoutes = require("./routes/videoRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
+const contactRoutes = require("./routes/contactRoutes"); // Add this
 const seedAdmin = require("./seeds/adminSeed");
 
 const app = express();
@@ -27,7 +28,7 @@ app.use(cors({
   credentials: true,
 }));
 
-// ✅ IMPORTANT: manually handle OPTIONS without route pattern
+// IMPORTANT: manually handle OPTIONS without route pattern
 app.use((req, res, next) => {
   if (req.method === "OPTIONS") {
     res.header("Access-Control-Allow-Origin", req.headers.origin);
@@ -49,6 +50,7 @@ app.get("/", (req, res) => {
 app.use("/api/admin", adminRoutes);
 app.use("/api/videos", videoRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/contact", contactRoutes); // Add this line
 
 // Start server AFTER DB + Seed
 const PORT = process.env.PORT || 5000;
@@ -56,7 +58,7 @@ const PORT = process.env.PORT || 5000;
 connectDB().then(async () => {
   console.log("MongoDB connected");
 
-  // ✅ Seed admin here
+  // Seed admin
   if (process.env.SEED_ADMIN === "true") {
     await seedAdmin();
   }

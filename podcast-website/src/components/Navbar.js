@@ -20,12 +20,27 @@ function Navbar() {
     fetchCategories();
   }, []);
 
-  const menuItems = [{ name: "Home", path: "/" }, ...categories.map(cat => ({ name: cat.name, path: `/category/${cat.slug}` }))];
+  // Menu items in correct order: Home → About → Channels → Contact
+  const menuItems = [
+    { name: "Home", path: "/" },
+    { name: "About", path: "/about" },
+    ...categories.map(cat => ({ 
+      name: cat.name, 
+      path: `/category/${cat.slug}` 
+    })),
+    { name: "Contact", path: "/contact" }
+  ];
 
   return (
-    <motion.nav initial={{ y: -100 }} animate={{ y: 0 }} transition={{ type: "spring", stiffness: 100, damping: 20 }} className="bg-white/10 backdrop-blur-lg border-b border-white/20 sticky top-0 z-50">
+    <motion.nav 
+      initial={{ y: -100 }} 
+      animate={{ y: 0 }} 
+      transition={{ type: "spring", stiffness: 100, damping: 20 }} 
+      className="bg-white/10 backdrop-blur-lg border-b border-white/20 sticky top-0 z-50"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
+          {/* Logo */}
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link to="/" className="flex items-center space-x-2">
               <span className="text-2xl">🎙️</span>
@@ -35,29 +50,63 @@ function Navbar() {
             </Link>
           </motion.div>
 
+          {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-8">
             {menuItems.map((item, index) => (
-              <motion.div key={item.name} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }} whileHover={{ y: -2 }}>
-                <Link to={item.path} className="text-gray-300 hover:text-white transition-colors relative group">
+              <motion.div 
+                key={item.name} 
+                initial={{ opacity: 0, y: -20 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                transition={{ delay: index * 0.1 }} 
+                whileHover={{ y: -2 }}
+              >
+                <Link 
+                  to={item.path} 
+                  className="text-gray-300 hover:text-white transition-colors relative group"
+                >
                   {item.name}
-                  <motion.div initial={{ width: 0 }} whileHover={{ width: "100%" }} className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-purple-500 to-pink-500" />
+                  <motion.div 
+                    initial={{ width: 0 }} 
+                    whileHover={{ width: "100%" }} 
+                    className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-red-500 to-red-600"
+                  />
                 </Link>
               </motion.div>
             ))}
           </div>
 
+          {/* Mobile Menu Button */}
           <div className="md:hidden">
-            <motion.button whileTap={{ scale: 0.95 }} onClick={() => setIsOpen(!isOpen)} className="text-gray-300 hover:text-white">
+            <motion.button 
+              whileTap={{ scale: 0.95 }} 
+              onClick={() => setIsOpen(!isOpen)} 
+              className="text-gray-300 hover:text-white"
+            >
               {isOpen ? <XIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
             </motion.button>
           </div>
         </div>
 
-        <motion.div initial={false} animate={isOpen ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }} transition={{ duration: 0.3 }} className="md:hidden overflow-hidden">
+        {/* Mobile Menu */}
+        <motion.div 
+          initial={false} 
+          animate={isOpen ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }} 
+          transition={{ duration: 0.3 }} 
+          className="md:hidden overflow-hidden"
+        >
           <div className="py-4 space-y-2">
             {menuItems.map((item, index) => (
-              <motion.div key={item.name} initial={{ x: -20, opacity: 0 }} animate={isOpen ? { x: 0, opacity: 1 } : {}} transition={{ delay: index * 0.1 }}>
-                <Link to={item.path} onClick={() => setIsOpen(false)} className="block px-4 py-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+              <motion.div 
+                key={item.name} 
+                initial={{ x: -20, opacity: 0 }} 
+                animate={isOpen ? { x: 0, opacity: 1 } : {}} 
+                transition={{ delay: index * 0.1 }}
+              >
+                <Link 
+                  to={item.path} 
+                  onClick={() => setIsOpen(false)} 
+                  className="block px-4 py-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                >
                   {item.name}
                 </Link>
               </motion.div>

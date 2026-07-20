@@ -26,7 +26,8 @@ import {
   Eye,
   EyeOff,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Mail
 } from "lucide-react";
 
 function AdminDashboard() {
@@ -61,7 +62,7 @@ function AdminDashboard() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [timeRange, setTimeRange] = useState('week'); // week, month, year
+  const [timeRange, setTimeRange] = useState('week');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [comments, setComments] = useState({});
   const [showComments, setShowComments] = useState(false);
@@ -79,13 +80,23 @@ function AdminDashboard() {
     likeTrend: []
   });
 
+  // Contact Stats State
+  const [contactStats, setContactStats] = useState({
+    total: 0,
+    unread: 0,
+    read: 0,
+    replied: 0,
+    archived: 0
+  });
+  const [recentContacts, setRecentContacts] = useState([]);
+
   // Change Password Modal State
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   useEffect(() => {
     fetchVideos();
     fetchComments();
-    // fetchLikeStats();
+    fetchContactStats();
 
     // Add ESC key listener
     const handleEscKey = (event) => {
@@ -255,6 +266,20 @@ function AdminDashboard() {
     }
   };
 
+  // Fetch Contact Stats
+  const fetchContactStats = async () => {
+    try {
+      const response = await API.get("/contact/stats");
+      setContactStats(response.data.data.stats);
+      
+      // Get recent contacts for dashboard
+      const contactsResponse = await API.get("/contact?limit=5");
+      setRecentContacts(contactsResponse.data.data.contacts || []);
+    } catch (error) {
+      console.error("Error fetching contact stats:", error);
+    }
+  };
+
   const generateViewsData = (videos, range) => {
     const days = range === 'week' ? 7 : range === 'month' ? 30 : 365;
     const data = [];
@@ -277,8 +302,8 @@ function AdminDashboard() {
       data.push({
         name: dateStr,
         views: dayViews,
-        likes: Math.floor(dayViews * 0.3), // Example calculation
-        comments: Math.floor(dayViews * 0.1) // Example calculation
+        likes: Math.floor(dayViews * 0.3),
+        comments: Math.floor(dayViews * 0.1)
       });
     }
   };
@@ -292,10 +317,8 @@ function AdminDashboard() {
     setDuration(0);
     setVideoError(false);
 
-    // Prevent body scrolling when modal is open
     document.body.style.overflow = 'hidden';
 
-    // Reset video source to ensure fresh load
     setTimeout(() => {
       if (modalVideoRef.current) {
         modalVideoRef.current.load();
@@ -315,13 +338,10 @@ function AdminDashboard() {
     setDuration(0);
     setVideoError(false);
 
-    // Restore body scrolling
     document.body.style.overflow = 'unset';
   };
 
-  // Handle click outside modal
   const handleModalClick = (e) => {
-    // If clicking the overlay (not the modal content), close
     if (e.target === e.currentTarget) {
       closeVideoModal();
     }
@@ -461,7 +481,6 @@ function AdminDashboard() {
         });
         fetchVideos();
         fetchComments();
-        // fetchLikeStats();
       } catch (error) {
         console.error("Error deleting video:", error);
         alert("Failed to delete video");
@@ -630,9 +649,9 @@ function AdminDashboard() {
     </svg>
   );
 
-  const TrendingUpIcon = () => (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+  const MailIcon = () => (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
     </svg>
   );
 
@@ -666,12 +685,10 @@ function AdminDashboard() {
             </div>
 
             <div className="flex items-center space-x-4">
-              {/* Time Range Filter */}
               <select
                 value={timeRange}
                 onChange={(e) => {
                   setTimeRange(e.target.value);
-                  // generateViewsData(recentUploads, e.target.value);
                 }}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
               >
@@ -686,7 +703,7 @@ function AdminDashboard() {
                 onClick={() => {
                   fetchVideos();
                   fetchComments();
-                  // fetchLikeStats();
+                  fetchContactStats();
                 }}
                 className="p-2 hover:bg-gray-100 rounded-lg text-gray-600"
                 title="Refresh data"
@@ -714,7 +731,6 @@ function AdminDashboard() {
                   <p className="text-xs text-gray-500">admin@anp.org</p>
                 </div>
 
-                {/* Change Password Button */}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -725,7 +741,6 @@ function AdminDashboard() {
                   <Lock size={18} />
                 </motion.button>
 
-                {/* Logout Button */}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -754,10 +769,14 @@ function AdminDashboard() {
               <h2 className="text-2xl font-bold mb-2">Welcome back, Admin!</h2>
               <p className="text-red-100">You have {stats.totalVideos} total videos with {formatNumber(stats.totalViews)} views, {formatNumber(stats.totalLikes)} likes, and {formatNumber(stats.totalComments)} comments</p>
               <div className="flex items-center gap-4 mt-4">
-                {/* <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
-                  <TrendingUpIcon />
-                  <span className="text-sm">Engagement Rate: {stats.engagementRate}%</span>
-                </div> */}
+                {contactStats.unread > 0 && (
+                  <Link to="/admin/contact">
+                    <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full hover:bg-white/30 transition-colors">
+                      <Mail size={16} />
+                      <span className="text-sm">{contactStats.unread} unread messages</span>
+                    </div>
+                  </Link>
+                )}
               </div>
             </div>
             <div className="hidden md:block">
@@ -776,7 +795,7 @@ function AdminDashboard() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8"
         >
           <motion.div variants={itemVariants} className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-red-600">
             <div className="flex items-center justify-between">
@@ -836,6 +855,31 @@ function AdminDashboard() {
                 <FolderIcon />
               </div>
             </div>
+          </motion.div>
+
+          {/* Contact Messages Card */}
+          <motion.div 
+            variants={itemVariants} 
+            className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-indigo-600 relative"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Contact Messages</p>
+                <p className="text-2xl font-bold text-gray-800">{contactStats.total || 0}</p>
+                {contactStats.unread > 0 && (
+                  <p className="text-xs text-red-500 font-medium">{contactStats.unread} unread</p>
+                )}
+              </div>
+              <div className="p-3 bg-indigo-100 rounded-lg text-indigo-600 relative">
+                <MailIcon />
+                {contactStats.unread > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
+                    {contactStats.unread}
+                  </span>
+                )}
+              </div>
+            </div>
+            <Link to="/admin/contact" className="absolute inset-0 rounded-xl hover:bg-indigo-50/50 transition-colors"></Link>
           </motion.div>
         </motion.div>
 
@@ -898,23 +942,31 @@ function AdminDashboard() {
             </div>
           </motion.div>
 
-          {/* Settings Card */}
-          <motion.div
-            whileHover={{ scale: 1.02, y: -5 }}
-            className="bg-white p-6 rounded-xl shadow-lg cursor-pointer hover:shadow-xl transition-all border border-gray-200"
-            onClick={() => setIsChangePasswordOpen(true)}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-gray-600">
-                  <Lock size={24} />
+          <Link to="/admin/contact">
+            <motion.div
+              whileHover={{ scale: 1.02, y: -5 }}
+              className={`bg-white p-6 rounded-xl shadow-lg cursor-pointer hover:shadow-xl transition-all border ${contactStats.unread > 0 ? 'border-red-300 shadow-red-100' : 'border-gray-200'}`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className={`${contactStats.unread > 0 ? 'text-red-600' : 'text-indigo-600'}`}>
+                    <MailIcon />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-800 mt-3">Contact Messages</h3>
+                  <p className="text-sm text-gray-500">
+                    {contactStats.unread > 0 
+                      ? `${contactStats.unread} new messages` 
+                      : 'View all messages'}
+                  </p>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-800 mt-3">Security</h3>
-                <p className="text-sm text-gray-500">Change password & settings</p>
+                {contactStats.unread > 0 && (
+                  <div className="bg-red-500 text-white text-xs font-bold w-8 h-8 rounded-full flex items-center justify-center">
+                    {contactStats.unread}
+                  </div>
+                )}
               </div>
-              <Settings size={20} className="text-gray-400" />
-            </div>
-          </motion.div>
+            </motion.div>
+          </Link>
         </motion.div>
 
         {/* Recent Uploads and Comments Section */}
@@ -1130,7 +1182,6 @@ function AdminDashboard() {
               className="relative w-full max-w-6xl bg-black rounded-2xl overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Close Button */}
               <button
                 onClick={closeVideoModal}
                 className="absolute top-4 right-4 z-20 p-2 bg-black/50 hover:bg-red-600 rounded-full text-white transition-colors"
@@ -1139,13 +1190,11 @@ function AdminDashboard() {
                 <CloseIcon />
               </button>
 
-              {/* Video Title */}
               <div className="absolute top-4 left-4 z-20 text-white">
                 <h3 className="text-xl font-bold">{selectedVideo.title}</h3>
                 <p className="text-sm text-gray-300">{selectedVideo.category}</p>
               </div>
 
-              {/* Video Container */}
               <div className="relative aspect-video bg-black">
                 {videoError ? (
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -1172,10 +1221,8 @@ function AdminDashboard() {
                   />
                 )}
 
-                {/* Custom Controls */}
                 {!videoError && (
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4">
-                    {/* Progress Bar */}
                     <div className="mb-4">
                       <input
                         type="range"
@@ -1191,10 +1238,8 @@ function AdminDashboard() {
                       </div>
                     </div>
 
-                    {/* Control Buttons */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
-                        {/* Play/Pause */}
                         <button
                           onClick={togglePlay}
                           className="text-white hover:text-red-500 transition-colors"
@@ -1202,7 +1247,6 @@ function AdminDashboard() {
                           {isPlaying ? <PauseIcon /> : <PlayIcon />}
                         </button>
 
-                        {/* Skip Backward */}
                         <button
                           onClick={skipBackward}
                           className="text-white hover:text-red-500 transition-colors"
@@ -1210,7 +1254,6 @@ function AdminDashboard() {
                           <SkipBackwardIcon />
                         </button>
 
-                        {/* Skip Forward */}
                         <button
                           onClick={skipForward}
                           className="text-white hover:text-red-500 transition-colors"
@@ -1218,7 +1261,6 @@ function AdminDashboard() {
                           <SkipForwardIcon />
                         </button>
 
-                        {/* Volume Control */}
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={toggleMute}
@@ -1237,7 +1279,6 @@ function AdminDashboard() {
                           />
                         </div>
 
-                        {/* Playback Speed */}
                         <button
                           onClick={changePlaybackSpeed}
                           className="px-2 py-1 bg-white/20 rounded text-white text-sm hover:bg-white/30 transition-colors"
@@ -1247,7 +1288,6 @@ function AdminDashboard() {
                       </div>
 
                       <div className="flex items-center space-x-2">
-                        {/* Fullscreen */}
                         <button
                           onClick={toggleFullscreen}
                           className="text-white hover:text-red-500 transition-colors"
@@ -1260,7 +1300,6 @@ function AdminDashboard() {
                 )}
               </div>
 
-              {/* Video Details */}
               <div className="bg-gray-900 p-4 text-white">
                 <p className="text-sm text-gray-300 mb-2">{selectedVideo.description}</p>
                 <div className="flex items-center space-x-4 text-xs text-gray-400">

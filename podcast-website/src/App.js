@@ -11,17 +11,20 @@ import AdminCategories from "./pages/AdminCategories";
 import AdminVideos from "./pages/AdminVideos";
 import AdminEditVideo from "./pages/AdminEditVideo";
 import AdminComments from "./pages/AdminComments";
+import AdminContact from "./pages/AdminContact"; // Add this import
+import About from "./pages/About";
+import Contact from "./pages/Contact";
 
 import AdminRoute from "./components/AdminRoute";
-import Footer from "./components/Footer"; // Import the Footer
+import Footer from "./components/Footer";
 
 // Layout component to conditionally show footer
 const Layout = ({ children }) => {
   const location = useLocation();
-  
+
   // Check if current path is an admin route
   const isAdminRoute = location.pathname.startsWith('/admin');
-  
+
   return (
     <>
       {children}
@@ -37,6 +40,8 @@ function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/category/:slug" element={<CategoryVideos />} />
           <Route path="/video/:id" element={<VideoPlayer />} />
 
@@ -89,6 +94,14 @@ function App() {
             element={
               <AdminRoute>
                 <AdminComments />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/contact"
+            element={
+              <AdminRoute>
+                <AdminContact />
               </AdminRoute>
             }
           />
