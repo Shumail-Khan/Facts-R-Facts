@@ -9,6 +9,16 @@ const videoSchema = new mongoose.Schema({
         ref: "Category"
     }, // Red Mic / Qalander / Naama
     thumbnailUrl: String,
+    source: {
+        type: String,
+        enum: ["cloudinary", "youtube"],
+        default: "cloudinary"
+    },
+
+    youtubeId: {
+        type: String,
+        default: null
+    },
     videoUrl: { type: String, required: true },
     duration: String,
     date: { type: Date, default: Date.now },

@@ -3,42 +3,54 @@ const Video = require("../models/Video");
 const cloudinary = require("../utils/cloudinary"); // your Cloudinary upload utility
 const streamifier = require("streamifier");
 
+function extractYoutubeId(url) {
+  const regex =
+    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([^&?/]+)/;
+
+  const match = url.match(regex);
+
+  return match ? match[1] : null;
+}
+
 exports.uploadVideo = async (req, res) => {
   try {
-    const videoFile = req.files.video[0];
-    const thumbnailFile = req.files.thumbnail?.[0];
+    const videoFile = req.files?.video?.[0];
+    const youtubeUrl = req.body.youtubeUrl?.trim();
+    const thumbnailFile = req.files?.thumbnail?.[0];
 
-
-    if (!videoFile) {
-      return res.status(400).json({ message: "Video file is required" });
+    if (!videoFile && !youtubeUrl) {
+      return res.status(400).json({
+        message: "Upload a video OR provide a YouTube URL."
+      });
     }
 
-    // Upload video using stream
-    const videoUpload = await new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        {
-          resource_type: "video",
-          folder: "podcasts",
-          eager: [{ format: "mp4" }],
-          eager_async: true
-          
-        },
-        (error, result) => {
-          if (result) resolve(result);
-          else reject(error);
-        }
-      );
-
-      streamifier.createReadStream(videoFile.buffer).pipe(stream);
-    });
-
+    let source = "cloudinary";
+    let videoUrl = "";
+    let youtubeId = "";
     let thumbnailUrl = req.body.thumbnailUrl || "";
 
-    if (thumbnailFile) {
-      const thumbnailUpload = await new Promise((resolve, reject) => {
+    if (youtubeUrl) {
+      source = "youtube";
+
+      youtubeId = extractYoutubeId(youtubeUrl);
+
+      if (!youtubeId) {
+        return res.status(400).json({
+          message: "Invalid YouTube URL"
+        });
+      }
+
+      videoUrl = youtubeUrl;
+      thumbnailUrl = `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`;
+    } else {
+      // Upload video
+      const videoUpload = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           {
-            folder: "podcast-thumbnails",
+            resource_type: "video",
+            folder: "podcasts",
+            eager: [{ format: "mp4" }],
+            eager_async: true,
           },
           (error, result) => {
             if (result) resolve(result);
@@ -46,21 +58,41 @@ exports.uploadVideo = async (req, res) => {
           }
         );
 
-        streamifier.createReadStream(thumbnailFile.buffer).pipe(stream);
+        streamifier.createReadStream(videoFile.buffer).pipe(stream);
       });
 
-      thumbnailUrl = thumbnailUpload.secure_url;
+      // ⭐ This was missing
+      videoUrl = videoUpload.secure_url;
+
+      // Upload thumbnail if provided
+      if (thumbnailFile) {
+        const thumbnailUpload = await new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              folder: "podcast-thumbnails",
+            },
+            (error, result) => {
+              if (result) resolve(result);
+              else reject(error);
+            }
+          );
+
+          streamifier.createReadStream(thumbnailFile.buffer).pipe(stream);
+        });
+
+        thumbnailUrl = thumbnailUpload.secure_url;
+      }
     }
+
     const newVideo = await Video.create({
       title: req.body.title,
       description: req.body.description,
       category: req.body.category,
-      videoUrl: videoUpload.secure_url,
-      thumbnailUrl: thumbnailUrl,
+      source,
+      videoUrl,
+      youtubeId,
+      thumbnailUrl,
       duration: req.body.duration,
-      tags: req.body.tags,
-      language: req.body.language,
-      featured: req.body.featured,
     });
 
     res.status(201).json({
@@ -70,7 +102,9 @@ exports.uploadVideo = async (req, res) => {
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Upload failed" });
+    res.status(500).json({
+      message: "Upload failed"
+    });
   }
 };
 
@@ -143,28 +177,53 @@ exports.deleteVideo = async (req, res) => {
   }
 };
 
-
 exports.updateVideo = async (req, res) => {
   try {
+    const updateData = {
+      title: req.body.title,
+      description: req.body.description,
+      category: req.body.category,
+      source: req.body.source,
+    };
+
+    if (req.body.source === "youtube") {
+      const youtubeId = extractYoutubeId(req.body.youtubeUrl);
+
+      if (!youtubeId) {
+        return res.status(400).json({
+          message: "Invalid YouTube URL",
+        });
+      }
+
+      updateData.youtubeId = youtubeId;
+      updateData.videoUrl = req.body.youtubeUrl;
+      updateData.thumbnailUrl = `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`;
+    } else {
+      updateData.youtubeId = "";
+      updateData.videoUrl = req.body.videoUrl;
+      updateData.thumbnailUrl = req.body.thumbnail;
+    }
 
     const updatedVideo = await Video.findByIdAndUpdate(
       req.params.id,
+      updateData,
       {
-        title: req.body.title,
-        description: req.body.description,
-        category: req.body.category
-      },
-      { new: true }
+        new: true,
+        runValidators: true,
+      }
     );
 
     if (!updatedVideo) {
-      return res.status(404).json({ message: "Video not found" });
+      return res.status(404).json({
+        message: "Video not found",
+      });
     }
 
     res.json(updatedVideo);
-
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Update failed" });
+    res.status(500).json({
+      message: "Update failed",
+    });
   }
 };

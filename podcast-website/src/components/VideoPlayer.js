@@ -37,7 +37,7 @@ const VideoPlayer = ({ video, onClose }) => {
       try {
         await API.post(`/videos/${videoId}/view`);
         sessionStorage.setItem(`viewed_${videoId}`, "true");
-        console.log("View tracked for video:", videoId);
+        // console.log("View tracked for video:", videoId);
       } catch (error) {
         console.error("View update failed", error);
       }
@@ -45,45 +45,58 @@ const VideoPlayer = ({ video, onClose }) => {
   };
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.addEventListener("loadedmetadata", () => {
-        setDuration(videoRef.current.duration);
-        setIsLoading(false);
-      });
-
-      videoRef.current.addEventListener("waiting", () => setIsLoading(true));
-      videoRef.current.addEventListener("playing", () => setIsLoading(false));
-
-      // Auto-play when video is selected
-      videoRef.current.play().catch(e => {
-        console.log("Autoplay prevented:", e);
-        setIsPlaying(false);
-      });
+    if (video.source === "youtube") {
+      return;
     }
+
+    if (!videoRef.current) return;
+
+    const videoElement = videoRef.current;
+
+    const handleLoaded = () => {
+      setDuration(videoElement.duration || 0);
+    };
+
+    videoElement.addEventListener("loadedmetadata", handleLoaded);
+
+    videoElement.play()
+      .then(() => setIsPlaying(true))
+      .catch(console.log);
 
     return () => {
-      if (controlsTimeout.current) {
-        clearTimeout(controlsTimeout.current);
-      }
+      videoElement.pause();
+      videoElement.removeEventListener("loadedmetadata", handleLoaded);
     };
-  }, []);
+
+  }, [video]);
 
   const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
+    console.log("Source:", video.source);
+    console.log("videoRef:", videoRef.current);
+
+    if (!videoRef.current) {
+      console.log("No video element");
+      return;
     }
+
+    if (isPlaying) {
+      videoRef.current.pause();
+    } else {
+      videoRef.current.play();
+    }
+
+    setIsPlaying(!isPlaying);
   };
 
   const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      setCurrentTime(videoRef.current.currentTime);
-      setProgress((videoRef.current.currentTime / duration) * 100);
-    }
+    if (!videoRef.current) return;
+
+    const current = videoRef.current.currentTime;
+    const total = videoRef.current.duration || 0;
+
+    setCurrentTime(current);
+
+    setProgress(total > 0 ? (current / total) * 100 : 0);
   };
 
   const handleProgressChange = (e) => {
@@ -145,7 +158,7 @@ const VideoPlayer = ({ video, onClose }) => {
   };
 
   useEffect(() => {
-    if (!video) return;
+    if (!video || video.source === "youtube") return;
 
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
@@ -203,20 +216,31 @@ const VideoPlayer = ({ video, onClose }) => {
     >
       <div className="relative" style={{ paddingTop: "56.25%" }}>
         {/* Video Element */}
-        {video?.videoUrl && (
+        {video?.source === "youtube" ? (
+          <iframe
+            key={video.id}
+            src={`https://www.youtube.com/embed/${video.youtubeId}?autoplay=1&controls=1`}
+            className="absolute inset-0 w-full h-full"
+            title={video.title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; encrypted-media"
+            allowFullScreen
+          />
+        ) : (
           <video
+            key={video.id}
             ref={videoRef}
             src={video.videoUrl}
-            onPlay={addView} // This triggers when video starts playing
-            className="absolute top-0 left-0 w-full h-full"
+            onPlay={addView}
+            className="absolute inset-0 w-full h-full"
             onClick={togglePlay}
             onTimeUpdate={handleTimeUpdate}
             onEnded={() => setIsPlaying(false)}
             playsInline
-          />)}
+          />
+        )}
 
         {/* Loading Spinner */}
-        {isLoading && (
+        {video.source !== "youtube" && isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50">
             <div className="w-12 h-12 border-4 border-red-200 border-t-red-600 rounded-full animate-spin"></div>
           </div>
@@ -248,6 +272,7 @@ const VideoPlayer = ({ video, onClose }) => {
         </motion.div>
 
         {/* Center Play/Pause Button */}
+        {video.source !== "youtube" && (
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{
@@ -269,8 +294,10 @@ const VideoPlayer = ({ video, onClose }) => {
             )}
           </motion.button>
         </motion.div>
+        )}
 
         {/* Bottom Controls */}
+        {video.source !== "youtube" && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: showControls ? 1 : 0, y: showControls ? 0 : 20 }}
@@ -350,8 +377,10 @@ const VideoPlayer = ({ video, onClose }) => {
             </div>
           </div>
         </motion.div>
+        )}
 
         {/* Keyboard Shortcuts Hint */}
+        {video.source !== "youtube" && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: showControls ? 0.5 : 0 }}
@@ -359,6 +388,7 @@ const VideoPlayer = ({ video, onClose }) => {
         >
           Space: Play/Pause | F: Fullscreen | ESC: Close | M: Mute
         </motion.div>
+        )}
       </div>
     </motion.div>
   );

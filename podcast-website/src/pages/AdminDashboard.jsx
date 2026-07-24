@@ -130,6 +130,8 @@ function AdminDashboard() {
         date: video.createdAt ? new Date(video.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
         thumbnail: video.thumbnail || "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=200&auto=format",
         videoUrl: video.videoUrl,
+        source: video.source || "cloudinary",
+        youtubeId: video.youtubeId || null,
         duration: video.duration || "0:00",
         createdAt: video.createdAt
       }));
@@ -320,7 +322,7 @@ function AdminDashboard() {
     document.body.style.overflow = 'hidden';
 
     setTimeout(() => {
-      if (modalVideoRef.current) {
+      if (video.source !== "youtube" && modalVideoRef.current) {
         modalVideoRef.current.load();
       }
     }, 100);
@@ -1024,14 +1026,25 @@ function AdminDashboard() {
                       onClick={() => openVideoModal(upload)}
                     >
                       <div className="relative w-full sm:w-40 h-24 bg-gray-900 rounded-lg overflow-hidden group">
-                        <img
-                          src={upload.thumbnail}
-                          alt={upload.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.src = "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=200&auto=format";
-                          }}
-                        />
+                        {upload.source === "youtube" ? (
+                          <img
+                            src={`https://img.youtube.com/vi/${upload.youtubeId}/hqdefault.jpg`}
+                            alt={upload.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.src = "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=200&auto=format";
+                            }}
+                          />
+                        ) : (
+                          <img
+                            src={upload.thumbnail}
+                            alt={upload.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.src = "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=200&auto=format";
+                            }}
+                          />
+                        )}
                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center">
                             <PlayIcon />
@@ -1196,7 +1209,16 @@ function AdminDashboard() {
               </div>
 
               <div className="relative aspect-video bg-black">
-                {videoError ? (
+                {selectedVideo.source === "youtube" ? (
+                  <iframe
+                    className="w-full h-full"
+                    src={`https://www.youtube.com/embed/${selectedVideo.youtubeId}?autoplay=0&rel=0`}
+                    title={selectedVideo.title}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : videoError ? (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center text-white">
                       <svg className="w-16 h-16 mx-auto mb-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1221,7 +1243,7 @@ function AdminDashboard() {
                   />
                 )}
 
-                {!videoError && (
+                {selectedVideo.source !== "youtube" && !videoError && (
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4">
                     <div className="mb-4">
                       <input

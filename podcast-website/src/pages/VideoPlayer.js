@@ -27,7 +27,7 @@ const VideoPlayer = ({ video, onClose, isMinimized, onMinimize }) => {
       videoRef.current.addEventListener("loadedmetadata", () => {
         setDuration(videoRef.current.duration);
       });
-      
+
       // Auto-play when video is selected
       videoRef.current.play().catch(e => console.log("Autoplay prevented:", e));
       setIsPlaying(true);
@@ -52,9 +52,17 @@ const VideoPlayer = ({ video, onClose, isMinimized, onMinimize }) => {
   };
 
   const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      setCurrentTime(videoRef.current.currentTime);
-      setProgress((videoRef.current.currentTime / duration) * 100);
+    if (!videoRef.current) return;
+
+    const current = videoRef.current.currentTime;
+    const total = videoRef.current.duration || 0;
+
+    setCurrentTime(current);
+
+    if (total > 0) {
+      setProgress((current / total) * 100);
+    } else {
+      setProgress(0);
     }
   };
 
@@ -138,15 +146,24 @@ const VideoPlayer = ({ video, onClose, isMinimized, onMinimize }) => {
       onMouseLeave={() => isPlaying && setShowControls(false)}
     >
       <div className="relative w-full h-full">
-        <video
-          ref={videoRef}
-          src={video.videoUrl}
-          className="w-full h-full"
-          onClick={togglePlay}
-          onTimeUpdate={handleTimeUpdate}
-          onEnded={() => setIsPlaying(false)}
-          playsInline
-        />
+        {video.source === "youtube" ? (
+          <iframe
+            src={`https://www.youtube.com/embed/${video.youtubeId}?rel=0`}
+            className="w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        ) : (
+          <video
+            ref={videoRef}
+            src={video.videoUrl}
+            className="w-full h-full"
+            onClick={togglePlay}
+            onTimeUpdate={handleTimeUpdate}
+            onEnded={() => setIsPlaying(false)}
+            playsInline
+          />
+        )}
 
         {/* Video Title Bar (when minimized) */}
         {isMinimized && (
@@ -162,151 +179,154 @@ const VideoPlayer = ({ video, onClose, isMinimized, onMinimize }) => {
         )}
 
         {/* Controls Overlay */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: showControls ? 1 : 0 }}
-          className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30"
-        >
-          {/* Top Controls */}
-          <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center">
-            {!isMinimized && (
-              <h3 className="text-white font-semibold truncate max-w-md">
-                {video.title}
-              </h3>
+        {video.source !== "youtube" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: showControls ? 1 : 0 }}
+            className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30"
+          >
+            {/* Top Controls */}
+            <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center">
+              {!isMinimized && (
+                <h3 className="text-white font-semibold truncate max-w-md">
+                  {video.title}
+                </h3>
+              )}
+              <div className="flex gap-2 ml-auto">
+                <button
+                  onClick={onMinimize}
+                  className="text-white hover:text-red-500 transition-colors"
+                  title={isMinimized ? "Expand" : "Minimize"}
+                >
+                  <ArrowsExpandIcon className={`w-5 h-5 transform ${isMinimized ? 'rotate-45' : ''}`} />
+                </button>
+                {!isMinimized && (
+                  <button
+                    onClick={onClose}
+                    className="text-white hover:text-red-500 transition-colors"
+                    title="Close"
+                  >
+                    <XIcon className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Center Play/Pause Button (only show when not minimized or controls visible) */}
+            {(!isMinimized || showControls) && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={togglePlay}
+                  className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-lg hover:bg-red-700 transition-colors"
+                >
+                  {isPlaying ? (
+                    <PauseIcon className="w-8 h-8 text-white" />
+                  ) : (
+                    <PlayIcon className="w-8 h-8 text-white ml-1" />
+                  )}
+                </motion.button>
+              </div>
             )}
-            <div className="flex gap-2 ml-auto">
+
+            {/* Bottom Controls - hide when minimized */}
+            {!isMinimized && (
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                {/* Progress Bar */}
+                <div className="mb-2">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={progress}
+                    onChange={handleProgressChange}
+                    className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, #ef4444 ${progress}%, #4b5563 ${progress}%)`
+                    }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    {/* Play/Pause */}
+                    <button
+                      onClick={togglePlay}
+                      className="text-white hover:text-red-500 transition-colors"
+                    >
+                      {isPlaying ? (
+                        <PauseIcon className="w-5 h-5" />
+                      ) : (
+                        <PlayIcon className="w-5 h-5" />
+                      )}
+                    </button>
+
+                    {/* Volume Control */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={toggleMute}
+                        className="text-white hover:text-red-500 transition-colors"
+                      >
+                        {isMuted || volume === 0 ? (
+                          <VolumeOffIcon className="w-5 h-5" />
+                        ) : (
+                          <VolumeUpIcon className="w-5 h-5" />
+                        )}
+                      </button>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={volume}
+                        onChange={handleVolumeChange}
+                        className="w-20 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Time */}
+                    <span className="text-white text-sm">
+                      {formatTime(currentTime)} / {formatTime(duration)}
+                    </span>
+                  </div>
+
+                  {/* Fullscreen */}
+                  <button
+                    onClick={toggleFullscreen}
+                    className="text-white hover:text-red-500 transition-colors"
+                    title="Fullscreen"
+                  >
+                    <ArrowsExpandIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+        {/* Simple controls for minimized mode */}
+        {video.source !== "youtube" &&
+          isMinimized &&
+          showControls && (
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 flex justify-center gap-4">
+              <button
+                onClick={togglePlay}
+                className="text-white hover:text-red-500 transition-colors"
+              >
+                {isPlaying ? (
+                  <PauseIcon className="w-5 h-5" />
+                ) : (
+                  <PlayIcon className="w-5 h-5" />
+                )}
+              </button>
               <button
                 onClick={onMinimize}
                 className="text-white hover:text-red-500 transition-colors"
-                title={isMinimized ? "Expand" : "Minimize"}
               >
-                <ArrowsExpandIcon className={`w-5 h-5 transform ${isMinimized ? 'rotate-45' : ''}`} />
+                <ArrowsExpandIcon className="w-5 h-5 transform rotate-45" />
               </button>
-              {!isMinimized && (
-                <button
-                  onClick={onClose}
-                  className="text-white hover:text-red-500 transition-colors"
-                  title="Close"
-                >
-                  <XIcon className="w-5 h-5" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Center Play/Pause Button (only show when not minimized or controls visible) */}
-          {(!isMinimized || showControls) && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={togglePlay}
-                className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-lg hover:bg-red-700 transition-colors"
-              >
-                {isPlaying ? (
-                  <PauseIcon className="w-8 h-8 text-white" />
-                ) : (
-                  <PlayIcon className="w-8 h-8 text-white ml-1" />
-                )}
-              </motion.button>
             </div>
           )}
-
-          {/* Bottom Controls - hide when minimized */}
-          {!isMinimized && (
-            <div className="absolute bottom-0 left-0 right-0 p-4">
-              {/* Progress Bar */}
-              <div className="mb-2">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={progress}
-                  onChange={handleProgressChange}
-                  className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to right, #ef4444 ${progress}%, #4b5563 ${progress}%)`
-                  }}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  {/* Play/Pause */}
-                  <button
-                    onClick={togglePlay}
-                    className="text-white hover:text-red-500 transition-colors"
-                  >
-                    {isPlaying ? (
-                      <PauseIcon className="w-5 h-5" />
-                    ) : (
-                      <PlayIcon className="w-5 h-5" />
-                    )}
-                  </button>
-
-                  {/* Volume Control */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={toggleMute}
-                      className="text-white hover:text-red-500 transition-colors"
-                    >
-                      {isMuted || volume === 0 ? (
-                        <VolumeOffIcon className="w-5 h-5" />
-                      ) : (
-                        <VolumeUpIcon className="w-5 h-5" />
-                      )}
-                    </button>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={volume}
-                      onChange={handleVolumeChange}
-                      className="w-20 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Time */}
-                  <span className="text-white text-sm">
-                    {formatTime(currentTime)} / {formatTime(duration)}
-                  </span>
-                </div>
-
-                {/* Fullscreen */}
-                <button
-                  onClick={toggleFullscreen}
-                  className="text-white hover:text-red-500 transition-colors"
-                  title="Fullscreen"
-                >
-                  <ArrowsExpandIcon className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          )}
-        </motion.div>
-
-        {/* Simple controls for minimized mode */}
-        {isMinimized && showControls && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 flex justify-center gap-4">
-            <button
-              onClick={togglePlay}
-              className="text-white hover:text-red-500 transition-colors"
-            >
-              {isPlaying ? (
-                <PauseIcon className="w-5 h-5" />
-              ) : (
-                <PlayIcon className="w-5 h-5" />
-              )}
-            </button>
-            <button
-              onClick={onMinimize}
-              className="text-white hover:text-red-500 transition-colors"
-            >
-              <ArrowsExpandIcon className="w-5 h-5 transform rotate-45" />
-            </button>
-          </div>
-        )}
       </div>
     </motion.div>
   );

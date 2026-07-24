@@ -80,17 +80,19 @@ function Home() {
         date: formatDateSafely(video.createdAt),
         views: video.views?.toString() || "0",
         likes: video.likes || 0,
-        comments: video.comments|| 0,
+        comments: video.comments || 0,
         videoUrl: video.videoUrl || video.cloudinaryUrl || '',
+        source: video.source || "cloudinary",
+        youtubeId: video.youtubeId || null,
         category: video.category?.name || "Uncategorized",
         categoryId: video.category?._id || null
       }));
 
       // Filter out videos without valid URLs
       const validVideos = formattedVideos.filter(v => v.videoUrl);
-      
+
       // Set featured videos (latest 6)
-      const sortedVideos = [...validVideos].sort((a, b) => 
+      const sortedVideos = [...validVideos].sort((a, b) =>
         new Date(b.date) - new Date(a.date)
       );
       setFeaturedVideos(sortedVideos.slice(0, 6));
@@ -200,11 +202,11 @@ function Home() {
 
   const handleLike = async (e, videoId) => {
     e.stopPropagation();
-    
+
     // Optimistic update
     const isLiked = likedVideos[videoId];
     const newLikedState = !isLiked;
-    
+
     setLikedVideos(prev => ({
       ...prev,
       [videoId]: newLikedState
@@ -262,7 +264,7 @@ function Home() {
     e.stopPropagation();
     setCurrentCommentVideo(video);
     setShowComments(true);
-    
+
     // Fetch comments for this video
     fetchComments(video.id);
   };
@@ -427,6 +429,7 @@ function Home() {
               onClick={e => e.stopPropagation()}
             >
               <VideoPlayer
+                key={`${selectedVideo.id}-${selectedVideo.source}`}
                 video={selectedVideo}
                 onClose={handleClosePlayer}
               />

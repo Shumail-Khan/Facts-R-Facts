@@ -10,13 +10,15 @@ function AdminEditVideo() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [categories, setCategories] = useState([]);
-  
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     category: '',
+    source: 'cloudinary', // Default source
     thumbnail: '',
-    videoUrl: ''
+    videoUrl: '',
+    youtubeUrl: '',
   });
 
   useEffect(() => {
@@ -28,22 +30,24 @@ function AdminEditVideo() {
     try {
       setLoading(true);
       const token = localStorage.getItem('adminToken');
-      
+
       const res = await API.get(`/videos/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
-      
+
       const video = res.data;
       setFormData({
         title: video.title || '',
         description: video.description || '',
         category: video.category?._id || video.category || '',
-        thumbnail: video.thumbnail || '',
-        videoUrl: video.videoUrl || ''
+        source: video.source || "cloudinary",
+        thumbnail: video.thumbnailUrl || '',
+        videoUrl: video.videoUrl || '',
+        youtubeUrl: video.source === "youtube" ? video.videoUrl : ''
       });
-      
+
       setError(null);
     } catch (err) {
       console.error('Error fetching video:', err);
@@ -71,23 +75,23 @@ function AdminEditVideo() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.title || !formData.description || !formData.category) {
       alert('Please fill in all required fields');
       return;
     }
-    
+
     try {
       setSubmitting(true);
       const token = localStorage.getItem('adminToken');
-      
+
       await API.put(`/videos/${id}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      
+
       alert('Video updated successfully!');
       navigate('/admin');
     } catch (err) {
@@ -213,30 +217,60 @@ function AdminEditVideo() {
               />
               {formData.thumbnail && (
                 <div className="mt-2">
-                  <img 
-                    src={formData.thumbnail} 
-                    alt="Thumbnail preview" 
+                  <img
+                    src={formData.thumbnail}
+                    alt="Thumbnail preview"
                     className="w-32 h-20 object-cover rounded-lg border border-gray-300"
                     onError={(e) => e.target.style.display = 'none'}
                   />
                 </div>
               )}
             </div>
-
-            {/* Video URL */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Video URL
+              <label className="block text-sm font-medium mb-2">
+                Source
               </label>
-              <input
-                type="url"
-                name="videoUrl"
-                value={formData.videoUrl}
+
+              <select
+                name="source"
+                value={formData.source}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                placeholder="Enter video URL"
-              />
+                className="w-full px-4 py-2 border rounded-lg"
+              >
+                <option value="cloudinary">Uploaded Video</option>
+                <option value="youtube">YouTube</option>
+              </select>
             </div>
+            {/* Video URL */}
+            {formData.source === "youtube" ? (
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  YouTube URL
+                </label>
+
+                <input
+                  type="url"
+                  name="youtubeUrl"
+                  value={formData.youtubeUrl}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded-lg"
+                />
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Video URL
+                </label>
+
+                <input
+                  type="url"
+                  name="videoUrl"
+                  value={formData.videoUrl}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded-lg"
+                />
+              </div>
+            )}
 
             {/* Form Actions */}
             <div className="flex gap-4 pt-4">
@@ -255,7 +289,7 @@ function AdminEditVideo() {
                   </span>
                 ) : 'Update Video'}
               </button>
-              
+
               <button
                 type="button"
                 onClick={handleCancel}
@@ -264,6 +298,14 @@ function AdminEditVideo() {
                 Cancel
               </button>
             </div>
+            {formData.source === "youtube" && formData.youtubeUrl && (
+              <iframe
+                className="w-full aspect-video rounded-lg mt-4"
+                src={`https://www.youtube.com/embed/${formData.youtubeUrl.split("v=")[1]?.split("&")[0]
+                  }`}
+                allowFullScreen
+              />
+            )}
           </form>
         </div>
       </motion.div>

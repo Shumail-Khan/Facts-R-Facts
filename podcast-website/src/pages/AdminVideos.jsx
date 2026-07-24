@@ -262,14 +262,14 @@ const AdminVideos = () => {
                         className="border-t hover:bg-gray-50 transition-colors"
                       >
                         <td className="p-4">
-                          <div 
+                          <div
                             onClick={() => playVideo(video)}
                             className="relative w-40 h-24 bg-black rounded-lg overflow-hidden cursor-pointer group shadow-md"
                           >
                             {video.thumbnailUrl ? (
                               <>
                                 <img
-                                  src={video.thumbnailUrl}
+                                  src={video.thumbnailUrl || `https://img.youtube.com/vi/${video.youtubeId}/hqdefault.jpg`}
                                   alt={video.title}
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 />
@@ -395,16 +395,24 @@ const AdminVideos = () => {
               >
                 <div className="relative">
                   {/* Video Player */}
-                  <video
-                    ref={el => videoRefs.current[selectedVideo._id] = el}
-                    src={selectedVideo.videoUrl}
-                    controls
-                    autoPlay
-                    className="w-full aspect-video bg-black"
-                    poster={selectedVideo.thumbnailUrl}
-                  >
-                    Your browser does not support the video tag.
-                  </video>
+                  {selectedVideo.source === "youtube" ? (
+                    <iframe
+                      className="w-full aspect-video"
+                      src={`https://www.youtube.com/embed/${selectedVideo.youtubeId}?autoplay=1`}
+                      title={selectedVideo.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <video
+                      ref={(el) => (videoRefs.current[selectedVideo._id] = el)}
+                      src={selectedVideo.videoUrl}
+                      controls
+                      autoPlay
+                      className="w-full aspect-video bg-black"
+                      poster={selectedVideo.thumbnailUrl}
+                    />
+                  )}
 
                   {/* Close Button */}
                   <button
@@ -469,15 +477,15 @@ const AdminVideos = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                 </div>
-                
+
                 <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
                   Delete Podcast
                 </h3>
-                
+
                 <p className="text-gray-500 text-center mb-6">
                   Are you sure you want to delete this podcast? This action cannot be undone and will remove the video permanently.
                 </p>
-                
+
                 <div className="flex space-x-3">
                   <button
                     onClick={closeDeleteModal}

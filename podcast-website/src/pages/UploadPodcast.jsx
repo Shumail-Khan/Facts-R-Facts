@@ -3,6 +3,24 @@ import API from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Extract a YouTube video ID from most common URL formats
+// (watch?v=, youtu.be/, embed/, shorts/)
+const extractYoutubeId = (url) => {
+  if (!url) return "";
+  const trimmed = url.trim();
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=)([^&\s]+)/,
+    /(?:youtu\.be\/)([^?&\s]+)/,
+    /(?:youtube\.com\/embed\/)([^?&\s]+)/,
+    /(?:youtube\.com\/shorts\/)([^?&\s]+)/,
+  ];
+  for (const pattern of patterns) {
+    const match = trimmed.match(pattern);
+    if (match && match[1]) return match[1];
+  }
+  return "";
+};
+
 function UploadPodcast() {
   const navigate = useNavigate();
   const videoRef = useRef(null);
@@ -15,7 +33,6 @@ function UploadPodcast() {
     language: "Pashto",
     featured: false,
   });
-
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -35,6 +52,11 @@ function UploadPodcast() {
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [categories, setCategories] = useState([]);
 
+  // Upload method: "upload" (file) or "youtube" (link)
+  const [uploadType, setUploadType] = useState("upload");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const youtubeId = extractYoutubeId(youtubeUrl);
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -44,22 +66,18 @@ function UploadPodcast() {
         console.error("Failed to fetch categories", error);
       }
     };
-
     fetchCategories();
   }, []);
-
   useEffect(() => {
     if (!thumbnailFile && formData.category) {
       const selectedCategory = categories.find(
         (c) => c._id === formData.category
       );
-
       if (selectedCategory?.image) {
         setPreviewUrl(selectedCategory.image);
       }
     }
   }, [formData.category, thumbnailFile, categories]);
-
   // Handle video playback
   const togglePlay = () => {
     if (videoRef.current && isVideoLoaded) {
@@ -74,29 +92,24 @@ function UploadPodcast() {
       setIsPlaying(!isPlaying);
     }
   };
-
   const handleTimeUpdate = () => {
     if (videoRef.current) {
       setCurrentTime(videoRef.current.currentTime);
     }
   };
-
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
       const videoDuration = videoRef.current.duration;
       setDuration(videoDuration);
-
       // Format duration for form
       const minutes = Math.floor(videoDuration / 60);
       const seconds = Math.floor(videoDuration % 60);
       const formattedDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
       setFormData((prev) => ({ ...prev, duration: formattedDuration }));
-
       setIsVideoLoaded(true);
       setVideoError(false);
     }
   };
-
   const handleVolumeChange = (e) => {
     const newVolume = parseFloat(e.target.value);
     setVolume(newVolume);
@@ -105,14 +118,12 @@ function UploadPodcast() {
     }
     setIsMuted(newVolume === 0);
   };
-
   const toggleMute = () => {
     if (videoRef.current) {
       videoRef.current.muted = !isMuted;
       setIsMuted(!isMuted);
     }
   };
-
   const handleSeek = (e) => {
     const newTime = parseFloat(e.target.value);
     setCurrentTime(newTime);
@@ -120,20 +131,17 @@ function UploadPodcast() {
       videoRef.current.currentTime = newTime;
     }
   };
-
   const handleVideoError = (e) => {
     console.error("Video error:", e);
     setVideoError(true);
     setIsVideoLoaded(false);
   };
-
   const formatTime = (seconds) => {
     if (isNaN(seconds)) return "0:00";
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
-
   // Input change handler
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -141,6 +149,17 @@ function UploadPodcast() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+  };
+
+  // Switch between "Upload File" and "YouTube URL"
+  const handleUploadTypeChange = (type) => {
+    setUploadType(type);
+    // Reset the other method's state so submit validation / FormData stays clean
+    if (type === "upload") {
+      setYoutubeUrl("");
+    } else {
+      removeVideo();
+    }
   };
 
   // Video file select - improved with better source handling
@@ -153,33 +172,27 @@ function UploadPodcast() {
         alert("Please select a valid video file (MP4, WebM, OGG, or MOV)");
         return;
       }
-
       // Check file size (max 500MB)
       if (file.size > 500 * 1024 * 1024) {
         alert("File size exceeds 500MB limit");
         return;
       }
-
       setSelectedVideo(file);
       setVideoError(false);
       setIsVideoLoaded(false);
-
       // Clean up previous preview URL
       if (videoPreviewUrl) {
         URL.revokeObjectURL(videoPreviewUrl);
       }
-
       // Create video preview URL
       const url = URL.createObjectURL(file);
       setVideoPreviewUrl(url);
-
       // Reset playback state
       setIsPlaying(false);
       setCurrentTime(0);
       setDuration(0);
     }
   };
-
   // Thumbnail select
   const handleThumbnailFileChange = (e) => {
     const file = e.target.files[0];
@@ -189,30 +202,24 @@ function UploadPodcast() {
         alert("Please select an image file");
         return;
       }
-
       setThumbnailFile(file);
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
       setFormData((prev) => ({ ...prev, thumbnail: url }));
     }
   };
-
   const removeThumbnail = () => {
     setThumbnailFile(null);
-
     const selectedCategory = categories.find(
       (c) => c._id === formData.category
     );
-
     if (selectedCategory?.image) {
       setPreviewUrl(selectedCategory.image);
     } else {
       setPreviewUrl("");
     }
-
     setFormData((prev) => ({ ...prev, thumbnail: "" }));
   };
-
   const removeVideo = () => {
     setSelectedVideo(null);
     if (videoPreviewUrl) {
@@ -226,7 +233,6 @@ function UploadPodcast() {
     setIsVideoLoaded(false);
     setVideoError(false);
   };
-
   // Clean up on unmount
   useEffect(() => {
     return () => {
@@ -238,13 +244,20 @@ function UploadPodcast() {
       }
     };
   }, [videoPreviewUrl, previewUrl]);
-
   // Form submit
   const submitHandler = async (e) => {
     e.preventDefault();
 
-    if (!selectedVideo) {
-      alert("Please select a video file to upload.");
+    if (uploadType === "upload" && !selectedVideo) {
+      alert("Please choose a video.");
+      return;
+    }
+    if (uploadType === "youtube" && !youtubeUrl.trim()) {
+      alert("Please enter a YouTube URL.");
+      return;
+    }
+    if (uploadType === "youtube" && !youtubeId) {
+      alert("Please enter a valid YouTube URL.");
       return;
     }
 
@@ -253,18 +266,24 @@ function UploadPodcast() {
     setUploadComplete(false);
     setUploadSuccess(false);
     setUploadError(false);
-
     try {
       const data = new FormData();
-      data.append("video", selectedVideo);
 
-      if (thumbnailFile) {
+      if (uploadType === "upload") {
+        data.append("video", selectedVideo);
+      } else {
+        data.append("youtubeUrl", youtubeUrl);
+      }
+
+      if (uploadType === "youtube") {
+        // YouTube already provides its own thumbnail - let the backend derive it
+        // (e.g. https://img.youtube.com/vi/{youtubeId}/maxresdefault.jpg)
+      } else if (thumbnailFile) {
         data.append("thumbnail", thumbnailFile);
       } else {
         const selectedCategory = categories.find(
           (c) => c._id === formData.category
         );
-
         if (selectedCategory?.image) {
           data.append("thumbnailUrl", selectedCategory.image);
         }
@@ -273,10 +292,13 @@ function UploadPodcast() {
       data.append("title", formData.title);
       data.append("description", formData.description);
       data.append("category", formData.category);
-      data.append("duration", formData.duration);
+      if (uploadType === "upload") {
+        // Duration for YouTube videos isn't known client-side (no <video> element);
+        // let the backend fetch it via the YouTube Data API instead.
+        data.append("duration", formData.duration);
+      }
       data.append("language", formData.language);
       data.append("featured", formData.featured);
-
       const res = await API.post('/videos/upload', data, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -286,20 +308,17 @@ function UploadPodcast() {
           const percent = Math.round(
             (progressEvent.loaded * 100) / progressEvent.total
           );
-            setUploadProgress(percent);
-
-            // Show complete message when 100%
-            if (percent === 100) {
-              setUploadComplete(true);
-            }
-          },
-        }
+          setUploadProgress(percent);
+          // Show complete message when 100%
+          if (percent === 100) {
+            setUploadComplete(true);
+          }
+        },
+      }
       );
-
       if (res.status === 201) {
         setUploadSuccess(true);
         setUploadError(false);
-
         setTimeout(() => {
           setFormData({
             title: "",
@@ -314,6 +333,8 @@ function UploadPodcast() {
           setThumbnailFile(null);
           setPreviewUrl("");
           setVideoPreviewUrl("");
+          setYoutubeUrl("");
+          setUploadType("upload");
           setUploadProgress(0);
           setUploading(false);
           setUploadComplete(false);
@@ -328,7 +349,6 @@ function UploadPodcast() {
       setUploadComplete(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-10">
       <div className="max-w-7xl mx-auto px-4">
@@ -340,7 +360,6 @@ function UploadPodcast() {
           <h1 className="text-4xl font-bold text-white mb-2">Upload New Podcast</h1>
           <p className="text-gray-400">Fill in the details and select a video to preview</p>
         </motion.div>
-
         {/* Status Messages */}
         <AnimatePresence>
           {/* Upload Complete Message - Shows at 100% */}
@@ -353,7 +372,6 @@ function UploadPodcast() {
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-8 -mt-8"></div>
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-8 -mb-8"></div>
-
               <div className="flex items-center relative z-10">
                 <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mr-4">
                   <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -363,7 +381,6 @@ function UploadPodcast() {
                 <div className="flex-1">
                   <h3 className="text-2xl font-bold text-white mb-1">Video Uploaded Successfully! 🎉</h3>
                   <p className="text-green-100">Your video has been uploaded and is being processed</p>
-
                   {/* Progress bar for visual effect */}
                   <div className="w-full bg-white/20 rounded-full h-2 mt-3">
                     <motion.div
@@ -377,7 +394,6 @@ function UploadPodcast() {
               </div>
             </motion.div>
           )}
-
           {/* Uploading Progress */}
           {uploading && !uploadComplete && (
             <motion.div
@@ -401,7 +417,6 @@ function UploadPodcast() {
               <p className="text-gray-400 text-sm mt-2">Please don't close the browser</p>
             </motion.div>
           )}
-
           {/* Upload Success - Final confirmation */}
           {uploadSuccess && (
             <motion.div
@@ -416,7 +431,6 @@ function UploadPodcast() {
               Upload Successful! Redirecting to dashboard...
             </motion.div>
           )}
-
           {/* Upload Error */}
           {uploadError && (
             <motion.div
@@ -432,7 +446,6 @@ function UploadPodcast() {
             </motion.div>
           )}
         </AnimatePresence>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column - Form */}
           <motion.div
@@ -441,38 +454,109 @@ function UploadPodcast() {
             transition={{ delay: 0.1 }}
           >
             <form onSubmit={submitHandler} className="bg-gray-800/50 backdrop-blur-sm p-8 rounded-2xl border border-gray-700 space-y-6">
-              {/* Video Upload Button - Professional */}
+              {/* Upload Method Selector */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">Select Video *</label>
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept="video/mp4,video/webm,video/ogg,video/quicktime"
-                    onChange={handleVideoFileChange}
-                    className="hidden"
-                    id="video-upload"
-                  />
+                <label className="block text-sm font-medium text-gray-300">Upload Method *</label>
+                <div className="grid grid-cols-2 gap-3">
                   <label
-                    htmlFor="video-upload"
-                    className="flex items-center justify-center w-full px-4 py-8 border-2 border-dashed border-gray-600 rounded-xl cursor-pointer hover:border-red-500 transition-colors group"
+                    className={`relative flex items-center justify-center px-4 py-3 rounded-lg border-2 cursor-pointer transition-all
+                      ${uploadType === "upload"
+                        ? "border-red-500 bg-red-500/10 ring-2 ring-red-500/20"
+                        : "border-gray-600 hover:border-gray-500 bg-gray-700/30"
+                      }`}
                   >
-                    <div className="text-center">
-                      <svg className="w-12 h-12 mx-auto text-gray-400 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                      <p className="mt-2 text-sm text-gray-400 group-hover:text-red-500 transition-colors">
-                        Click to upload or drag and drop
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">MP4, WebM, MOV (max. 500MB)</p>
-                    </div>
+                    <input
+                      type="radio"
+                      name="uploadType"
+                      value="upload"
+                      checked={uploadType === "upload"}
+                      onChange={() => handleUploadTypeChange("upload")}
+                      className="absolute opacity-0"
+                    />
+                    <span className={`text-sm font-medium ${uploadType === "upload" ? "text-white" : "text-gray-400"}`}>
+                      Upload File
+                    </span>
+                  </label>
+                  <label
+                    className={`relative flex items-center justify-center px-4 py-3 rounded-lg border-2 cursor-pointer transition-all
+                      ${uploadType === "youtube"
+                        ? "border-red-500 bg-red-500/10 ring-2 ring-red-500/20"
+                        : "border-gray-600 hover:border-gray-500 bg-gray-700/30"
+                      }`}
+                  >
+                    <input
+                      type="radio"
+                      name="uploadType"
+                      value="youtube"
+                      checked={uploadType === "youtube"}
+                      onChange={() => handleUploadTypeChange("youtube")}
+                      className="absolute opacity-0"
+                    />
+                    <span className={`text-sm font-medium ${uploadType === "youtube" ? "text-white" : "text-gray-400"}`}>
+                      YouTube URL
+                    </span>
                   </label>
                 </div>
-                {selectedVideo && (
-                  <p className="text-sm text-green-400 mt-2">
-                    ✓ Selected: {selectedVideo.name}
-                  </p>
-                )}
               </div>
+
+              {/* Video Upload Button - Professional (Upload File mode) */}
+              {uploadType === "upload" && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-300">Select Video *</label>
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                      onChange={handleVideoFileChange}
+                      className="hidden"
+                      id="video-upload"
+                    />
+                    <label
+                      htmlFor="video-upload"
+                      className="flex items-center justify-center w-full px-4 py-8 border-2 border-dashed border-gray-600 rounded-xl cursor-pointer hover:border-red-500 transition-colors group"
+                    >
+                      <div className="text-center">
+                        <svg className="w-12 h-12 mx-auto text-gray-400 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <p className="mt-2 text-sm text-gray-400 group-hover:text-red-500 transition-colors">
+                          Click to upload or drag and drop
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">MP4, WebM, MOV (max. 500MB)</p>
+                      </div>
+                    </label>
+                  </div>
+                  {selectedVideo && (
+                    <p className="text-sm text-green-400 mt-2">
+                      ✓ Selected: {selectedVideo.name}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* YouTube URL input (YouTube mode) */}
+              {uploadType === "youtube" && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-300">YouTube URL *</label>
+                  <input
+                    type="url"
+                    value={youtubeUrl}
+                    onChange={(e) => setYoutubeUrl(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                    placeholder="https://youtu.be/...."
+                  />
+                  {youtubeUrl.trim() && !youtubeId && (
+                    <p className="text-sm text-yellow-500 mt-2">
+                      Couldn't recognize this as a YouTube link. Double-check the URL.
+                    </p>
+                  )}
+                  {youtubeId && (
+                    <p className="text-sm text-green-400 mt-2">
+                      ✓ Video ID detected: {youtubeId}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Title */}
               <div className="space-y-2">
@@ -487,7 +571,6 @@ function UploadPodcast() {
                   placeholder="Enter podcast title"
                 />
               </div>
-
               {/* Description */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-300">Description *</label>
@@ -501,7 +584,6 @@ function UploadPodcast() {
                   placeholder="Describe your podcast episode..."
                 />
               </div>
-
               {/* Category Selection - FIXED */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-300">
@@ -543,7 +625,6 @@ function UploadPodcast() {
                   </p>
                 )}
               </div>
-
               {/* Language Selection */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-300">Language</label>
@@ -560,48 +641,48 @@ function UploadPodcast() {
                   <option value="Sindhi">Sindhi</option>
                 </select>
               </div>
-
-              {/* Thumbnail Upload */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">Thumbnail (Optional)</label>
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleThumbnailFileChange}
-                    className="hidden"
-                    id="thumbnail-upload"
-                  />
-                  <label
-                    htmlFor="thumbnail-upload"
-                    className="flex items-center justify-center w-full px-4 py-4 border border-gray-600 rounded-lg cursor-pointer hover:border-red-500 transition-colors"
-                  >
-                    <svg className="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span className="text-sm text-gray-400">Choose thumbnail image</span>
-                  </label>
-                </div>
-                {previewUrl && (
-                  <div className="mt-3 relative w-32 h-20 rounded-lg overflow-hidden">
-                    <img
-                      src={previewUrl}
-                      alt="Thumbnail preview"
-                      className="w-full h-full object-cover"
+              {/* Thumbnail Upload - hidden for YouTube, which already has its own thumbnail */}
+              {uploadType !== "youtube" && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-300">Thumbnail (Optional)</label>
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleThumbnailFileChange}
+                      className="hidden"
+                      id="thumbnail-upload"
                     />
-                    <button
-                      type="button"
-                      onClick={removeThumbnail}
-                      className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                    <label
+                      htmlFor="thumbnail-upload"
+                      className="flex items-center justify-center w-full px-4 py-4 border border-gray-600 rounded-lg cursor-pointer hover:border-red-500 transition-colors"
                     >
-                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      <svg className="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                    </button>
+                      <span className="text-sm text-gray-400">Choose thumbnail image</span>
+                    </label>
                   </div>
-                )}
-              </div>
-
+                  {previewUrl && (
+                    <div className="mt-3 relative w-32 h-20 rounded-lg overflow-hidden">
+                      <img
+                        src={previewUrl}
+                        alt="Thumbnail preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={removeThumbnail}
+                        className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                      >
+                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
               {/* Featured Checkbox */}
               <div className="flex items-center">
                 <input
@@ -616,18 +697,20 @@ function UploadPodcast() {
                   Mark as featured episode
                 </label>
               </div>
-
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={uploading || !selectedVideo}
+                disabled={
+                  uploading ||
+                  (uploadType === "upload" && !selectedVideo) ||
+                  (uploadType === "youtube" && !youtubeUrl.trim())
+                }
                 className="w-full py-4 bg-gradient-to-r from-red-500 to-red-600 text-white font-medium rounded-lg hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
               >
                 {uploading ? `Uploading... ${uploadProgress}%` : "Upload Podcast"}
               </button>
             </form>
           </motion.div>
-
           {/* Right Column - Video Preview with Playback Controls */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -635,13 +718,90 @@ function UploadPodcast() {
             transition={{ delay: 0.2 }}
             className="lg:sticky lg:top-6 h-fit"
           >
-            {selectedVideo ? (
+            {uploadType === "youtube" ? (
+              youtubeId ? (
+                <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700 overflow-hidden">
+                  {/* YouTube Preview */}
+                  <div className="relative aspect-video bg-black">
+                    <iframe
+                      className="w-full h-full"
+                      src={`https://www.youtube.com/embed/${youtubeId}`}
+                      title={formData.title || "YouTube preview"}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                    <div className="absolute top-4 left-4 flex items-center space-x-2 pointer-events-none">
+                      <span className="px-3 py-1 bg-red-500/90 backdrop-blur-sm text-white text-xs font-medium rounded-full">
+                        YouTube Preview
+                      </span>
+                    </div>
+                  </div>
+                  {/* Video Details Panel */}
+                  <div className="p-6 space-y-4">
+                    <div>
+                      <h2 className="text-2xl font-bold text-white mb-2">
+                        {formData.title || "Untitled Podcast"}
+                      </h2>
+                      {formData.category && (
+                        <div className="flex items-center space-x-2 flex-wrap gap-2">
+                          <span className="px-3 py-1 bg-gradient-to-r from-red-500 to-red-600 rounded-full text-white text-xs font-medium">
+                            {categories.find(c => c._id === formData.category)?.name || "Category"}
+                          </span>
+                          <span className="text-sm text-gray-400">
+                            {formData.language}
+                          </span>
+                          {formData.featured && (
+                            <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs font-medium border border-yellow-500/30">
+                              ⭐ Featured
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {formData.description && (
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-400 mb-2">Description</h3>
+                        <p className="text-gray-300 text-sm leading-relaxed">
+                          {formData.description}
+                        </p>
+                      </div>
+                    )}
+                    <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-lg p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                          <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-green-400">YouTube video ready to link</p>
+                          <p className="text-xs text-green-500/70">Thumbnail and duration will be pulled from YouTube</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Empty State - No valid YouTube URL yet */
+                <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700 p-12 text-center">
+                  <div className="w-24 h-24 mx-auto mb-4 bg-gray-700/50 rounded-full flex items-center justify-center">
+                    <svg className="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-medium text-white mb-2">No YouTube Link Yet</h3>
+                  <p className="text-gray-400 text-sm">
+                    Paste a YouTube URL in the form to see a preview here
+                  </p>
+                </div>
+              )
+            ) : selectedVideo ? (
               <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700 overflow-hidden">
                 {/* Video Player with Custom Controls */}
                 <div className="relative aspect-video bg-black group"
                   onMouseEnter={() => setShowControls(true)}
                   onMouseLeave={() => setShowControls(false)}>
-
                   {/* Video Element with proper sources */}
                   <video
                     ref={videoRef}
@@ -660,7 +820,6 @@ function UploadPodcast() {
                     )}
                     Your browser does not support the video tag.
                   </video>
-
                   {/* Video Info Overlay */}
                   <div className="absolute top-4 left-4 flex items-center space-x-2">
                     <span className="px-3 py-1 bg-red-500/90 backdrop-blur-sm text-white text-xs font-medium rounded-full">
@@ -672,7 +831,6 @@ function UploadPodcast() {
                       </span>
                     )}
                   </div>
-
                   {/* Remove Video Button */}
                   <button
                     type="button"
@@ -683,7 +841,6 @@ function UploadPodcast() {
                       <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                     </svg>
                   </button>
-
                   {/* Video Error Message */}
                   {videoError && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/80">
@@ -696,7 +853,6 @@ function UploadPodcast() {
                       </div>
                     </div>
                   )}
-
                   {/* Custom Video Controls */}
                   <AnimatePresence>
                     {showControls && !videoError && isVideoLoaded && (
@@ -721,7 +877,6 @@ function UploadPodcast() {
                             <span>{formatTime(duration)}</span>
                           </div>
                         </div>
-
                         {/* Control Buttons */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-4">
@@ -740,7 +895,6 @@ function UploadPodcast() {
                                 </svg>
                               )}
                             </button>
-
                             {/* Volume Control */}
                             <div className="flex items-center space-x-2">
                               <button
@@ -768,7 +922,6 @@ function UploadPodcast() {
                               />
                             </div>
                           </div>
-
                           {/* Fullscreen Button */}
                           <button
                             onClick={() => videoRef.current?.requestFullscreen()}
@@ -782,7 +935,6 @@ function UploadPodcast() {
                       </motion.div>
                     )}
                   </AnimatePresence>
-
                   {/* Big Play Button (when paused and video loaded) */}
                   {!isPlaying && !videoError && isVideoLoaded && (
                     <button
@@ -794,7 +946,6 @@ function UploadPodcast() {
                       </svg>
                     </button>
                   )}
-
                   {/* Loading State */}
                   {!isVideoLoaded && !videoError && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -802,7 +953,6 @@ function UploadPodcast() {
                     </div>
                   )}
                 </div>
-
                 {/* Video Details Panel */}
                 <div className="p-6 space-y-4">
                   {/* Title and Category */}
@@ -826,7 +976,6 @@ function UploadPodcast() {
                       </div>
                     )}
                   </div>
-
                   {/* Description */}
                   {formData.description && (
                     <div>
@@ -836,7 +985,6 @@ function UploadPodcast() {
                       </p>
                     </div>
                   )}
-
                   {/* Video Stats */}
                   {selectedVideo && (
                     <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-700">
@@ -856,7 +1004,6 @@ function UploadPodcast() {
                       </div>
                     </div>
                   )}
-
                   {/* Success Message */}
                   {isVideoLoaded && !videoError && (
                     <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-lg p-4">
@@ -904,5 +1051,4 @@ function UploadPodcast() {
     </div>
   );
 }
-
 export default UploadPodcast;
