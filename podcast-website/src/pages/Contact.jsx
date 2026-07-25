@@ -106,7 +106,7 @@ function Contact() {
     {
       icon: <LocationMarkerIcon className="w-6 h-6" />,
       title: "Location",
-      detail: "Peshawar, Pakistan",
+      detail: "Wali Bagh, Charsadda",
       link: null
     },
     {
