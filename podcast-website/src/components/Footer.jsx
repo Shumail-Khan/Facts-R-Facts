@@ -7,7 +7,7 @@ const Footer = () => {
 
   return (
     <footer className="bg-red-950 text-gray-300 py-6">
-      <div className="container mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content - Smaller grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
           {/* Logo and Description */}
@@ -68,7 +68,16 @@ const Footer = () => {
                   Home
                 </Link>
               </li>
-              
+              <li>
+                <Link to="/about" className="text-xs text-gray-300 hover:text-red-400 transition-colors">
+                  About
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="text-xs text-gray-300 hover:text-red-400 transition-colors">
+                  Contact
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
@@ -76,14 +85,14 @@ const Footer = () => {
         {/* Divider - Thinner */}
         <div className="border-t border-red-800 pt-3">
           {/* Copyright and Legal - Compact */}
-          <div className="flex flex-col md:flex-row justify-between items-center text-xs">
-            <div className="mb-2 md:mb-0 flex items-center gap-2 text-gray-400">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
+            <div className="flex items-center gap-2 text-gray-400">
               <Copyright size={12} className="text-red-400" />
               <span>© {currentYear} Facts Are Facts. All rights reserved.</span>
             </div>
 
             {/* Legal Links - Compact */}
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-3 sm:gap-4">
               <span className="text-gray-400 hover:text-red-400 transition-colors text-xs">
                 Privacy
               </span>

@@ -862,7 +862,7 @@ function AdminDashboard() {
           {/* Contact Messages Card */}
           <motion.div 
             variants={itemVariants} 
-            className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-indigo-600 relative"
+            className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-indigo-600 relative transition-all hover:shadow-xl"
           >
             <div className="flex items-center justify-between">
               <div>
@@ -947,8 +947,9 @@ function AdminDashboard() {
           <Link to="/admin/contact">
             <motion.div
               whileHover={{ scale: 1.02, y: -5 }}
-              className={`bg-white p-6 rounded-xl shadow-lg cursor-pointer hover:shadow-xl transition-all border ${contactStats.unread > 0 ? 'border-red-300 shadow-red-100' : 'border-gray-200'}`}
+              className={`bg-white p-6 rounded-xl shadow-lg cursor-pointer hover:shadow-xl transition-all border relative overflow-hidden ${contactStats.unread > 0 ? 'border-red-300 shadow-red-100' : 'border-gray-200'}`}
             >
+              <div className={`absolute left-0 top-0 bottom-0 w-1 ${contactStats.unread > 0 ? 'bg-red-500' : 'bg-indigo-600'}`} />
               <div className="flex items-center justify-between">
                 <div>
                   <div className={`${contactStats.unread > 0 ? 'text-red-600' : 'text-indigo-600'}`}>

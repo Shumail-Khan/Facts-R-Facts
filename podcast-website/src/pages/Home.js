@@ -478,7 +478,7 @@ function Home() {
           <div className="text-center md:text-left max-w-xl">
             <motion.h1
               variants={itemVariants}
-              className="text-4xl md:text-5xl font-bold text-white mb-4"
+              className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 whitespace-normal sm:whitespace-nowrap"
             >
               Welcome to <span className="text-red-500">Facts Are Facts</span>
             </motion.h1>
